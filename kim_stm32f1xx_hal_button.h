@@ -27,8 +27,8 @@
 #define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
 
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
-#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 500 ms */
+#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(3000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
 /***** NVIC Priority config *****/
@@ -89,6 +89,9 @@ struct Kim_Button_Status {
 
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
     void (* method_interrupt_handler) (void);
+
+    /** @b [public] This member variable is used to record the long-push time. */
+    uint16_t                                public_long_push_min_time;
 
     /** @p [private] This member variable is used to record the state of each button. */
     ENUM_BITFIELD (enum Kim_Button_State)   private_state : 8;
@@ -160,6 +163,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     self->private_state = Kim_Button_State_Wait_For_Interrupt;
     self->private_time_stamp_interrupt = 0;
     self->private_time_stamp_loop = 0;
+    self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
 
     /* Initialize the public method */
     self->method_asynchronous_handler = method_asynchronous_handler;
@@ -369,7 +373,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt
-            > KIM_BUTTON_LONG_PUSH_MIN_TIME)
+            > (uint32_t)self->public_long_push_min_time)
         {
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
         } else {
