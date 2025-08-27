@@ -38,8 +38,8 @@
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0
 
-/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *
-     * otherwise define follow macro as @c 0 .                                  ****/
+/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
+ ***** otherwise define follow macro as @c 0 .                                  *****/
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0

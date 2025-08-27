@@ -1,5 +1,8 @@
 # STM32-SimpleButton
-[Chinese]: 一个非常精简的STM32按键框架，适配STM32 HAL库。[English]: A very tiny STM32 key(button) frame, compatible with the STM32 HAL library.
+
+[Chinese] :  一个非常精简的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，非阻塞。
+
+[English] : A very tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
 
 ---
 
@@ -114,7 +117,50 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 * 使用了SysTick，可能会与HAL_Delay冲突。
 
 * 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
-  
+
+#### 自定义选项（宏）：
+
+* 在`kim_stm32f1xx_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。
+
+```c
+/* ============ Users can customize these by themselves(自定义选项开始) ============ */
+
+/***** time config(配置各种时间) *****/
+/* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
+#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
+/* calculate the tick with the time(计算宏，由于一次中断计数是1ms，此处tick == time) */
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+
+// 按下按键后，延时（非阻塞）用于消抖的时间
+#define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+// 松开按键后，判定双击的窗口时间。在此期间再次按下，判定为双击。
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
+
+// 长按判定的最小时间，超过这个时间就判定为长按
+#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
+
+// 松开按键后，延时（非阻塞）用于消抖的时间
+#define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+/***** NVIC Priority config(NVIC 中断优先级配置) *****/
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick 抢占优先级
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick 响应优先级
+
+#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI 抢占优先级
+#define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI 响应优先级
+
+/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
+ ***** otherwise define follow macro as @c 0 .                                  *****/
+/* 如果你使用STM32CubeMX生成了相关代码，请将下方对应的宏定义值改为1，可以减少重复代码 */
+/* 如果不确定，可以先保持宏定义为0，测试通过后，再改为1，查看效果是否改变 */
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0 // 如果 CubeMX生成了SysTick相关代码，宏改为1
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0 // 如果 CubeMX生成了EXTI相关代码，宏改为1
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0 // 如果 CubeMX生成了NVIC相关代码，宏改为1
+
+/* ====================== Customization END(自定义选项结束) ======================== */
+```
+
   
 
 ### [English]:
@@ -125,21 +171,21 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 
 #### How to use：
 
-* First, suppose we have three files (' main.c ', 'my_button.c', 'my_button.h'). Among them, the my_button.c file stores the key codes, the my_button.h file stores the necessary declarations, and the main.c call code.
+* First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the key codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
 
-* Then, in 'my_button.c', first import the header file 'kim_stm32f1xx_hal_button.h', and use the **KIM_BUTTON__REGISTER** macro to generate the required code. When my button is triggered, it will produce a rising and falling edge signal at **PA7**. I want to name the button **myButton**
+* Then, in `my_button.c`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
   
   ```c
   /* The following is the content of my_button.c */ 
   #include "kim_stm32f1xx_hal_button.h" // Include header files
   
-  // The sequence is port base address, pin number, trigger edge selection, and key name
+  // The sequence is port base address, pin number, trigger edge selection, and key name(up to you)
   KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // Note: No need to add ;
   ```
   
   
 
-* Next, in 'my_button.h', first import the header file 'kim_stm32f1xx_hal_button.h', and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
+* Next, in `my_button.h`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
   
   ```c
   /* The following is the content of my_button.h */ 
@@ -150,29 +196,29 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
   KIM_BUTTON__DECLARE(myButton) // Note: No need to add ;
   ```
 
-* Finally, in main.c, import the header file my_button.h, prepare the callback function, and then call the three functions in three places. Examples and detailed explanations are as follows:
+* Finally, in `main.c`, import the header file `my_button.h`, prepare the callback function, and then call the three functions in three places. Examples and detailed explanations are as follows:
   
   
 
 ```c
-/* 以下是 main.c 内容 */ 
+/* The following is the content of main.c */ 
 /* ... */
 #include "my_button.h" 
 
-// Press the callback function briefly. After pressing the key briefly, it will be executed (the function name is arbitrary)
+// Callback function of short press. After shor pressing, it will be executed (the function name is arbitrary)
 void short_push_callback(void) { ... } 
 
-// 长按回调函数，长按后会执行它 (函数名随意) 
+// Callback function of long press. After long pressing, it will be executed (the function name is arbitrary).
 void long_push_callback(void) { ... } 
 
-// Long press the callback function. After long pressing, it will be executed (the function name is arbitrary).
+// Callback function of double press. After double pressing, it will be executed (the function name is arbitrary).
 void double_push_callback(void) { ... } 
 
 int main(void) 
 {
   /* ... Other irrelevant code ... */
 
-  // 【 First Place 】 : Call the initialization function before the while loop. The name of the initialization function is Kim_Button_Init_ plus the key name you defined.
+  // 【 First Place 】 : Call the initialization function before the while loop. The name of the initialization function is Kim_Button_Init_ plus the key(button) name you defined.
   //     For example: I also defined a key named ABC in my_button.c and my_button.h.
   //     Then here I should call another function, Kim_Button_Init_ABC()
   Kim_Button_Init_myButton();
@@ -202,7 +248,7 @@ int main(void)
 // Writing Method One:
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    /* ... Other irrelevant code ... */
-  if(GPIO_Pin == GPIO_PIN_7) // 假设我的按钮链接的是 PA7
+  if(GPIO_Pin == GPIO_PIN_7) // Suppose my button is linked to PA7
   {
       // Call the interrupt handling function of the key
       Kim_Button_myButton.method_interrupt_handler();
@@ -211,7 +257,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 } 
 
 // Writing Method Two: (You can try to find this callback function in the stm32_xxxx_it.c file. If it's not available, write it yourself.
-void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7 
+void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 {
    /* ... Other irrelevant code ... */
   if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != 0)
@@ -229,3 +275,46 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 * SysTick is used, which may conflict with HAL Delay()
 
 * Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
+
+#### Customizable options (Macro):
+
+* At the beginning of the `kim_stm32f1xx_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements.
+
+```c
+/* ============ Users can customize these by themselves ============ */
+
+/***** time config *****/
+/* one tick(one interrupt = 1ms) */
+#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
+/* calculate the tick with the time */
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+
+// The delay (non-blocking) used for debouncing after pressing the key
+#define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+// After releasing the key, determine the window time for double-clicking. If you press again during this period, it will be judged as a double-click.
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
+
+// The minimum duration for long press determination. If it exceeds this time, it will be determined as a long press
+#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
+
+// The delay (non-blocking) used for debouncing after releasing the key
+#define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+/***** NVIC Priority config *****/
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick PreemptionPriority
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick SubPriority
+
+#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI PreemptionPriority
+#define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI SubPriority
+
+/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
+ ***** otherwise define follow macro as @c 0 .                                  *****/
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0//If CubeMX generates Systick code, change the macro to 1
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0//If CubeMX generates EXTI code, change the macro to 1
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0//If CubeMX generates NVIC code, change the macro to 1
+
+/* ====================== Customization END ======================== */
+```
+
+
