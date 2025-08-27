@@ -2,7 +2,7 @@
  * @file            kim_stm32f1xx_hal_button.h
  * @author          Kim-J-Smith
  * @brief           Kim Library to offer a template for button [STM32 HAL]
- * @version         0.0.2 ( 0002L )
+ * @version         0.0.3 ( 0003L )
  *          (match with stm32f1xx_hal.h version 1.0.0)
  * @date            2025-08-26
  * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
@@ -11,7 +11,7 @@
 # include "stm32f1xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0002L
+#define     KIM_STM32F1XX_HAL_BUTTON_H  0003L
 
 /* ================================================================================ */
 /**    @b ATTENTION Kim_Button use SysTick, which conflicts with with Delay_xxx    **/
@@ -440,7 +440,8 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
     struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);\
                                                                                 \
-    static void Kim_Button_Asynchronous_Handler_ ## __name(                     \
+    static void                                                                 \
+    KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
         void (*short_push_callback)(void),                                      \
         void (*long_push_callback)(void),                                       \
         void (*double_push_callback)(void)                                      \
@@ -457,7 +458,8 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         );                                                                      \
     }                                                                           \
                                                                                 \
-    static void Kim_Button_Handler_During_IT_ ## __name(void)                   \
+    static void                                                                 \
+    KIM_BUTTON_CONNECT(Kim_Button_Handler_During_IT_, __name)(void)             \
     {                                                                           \
         Kim_Button_PrivateUse_ITHandler(                                        \
             &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name))               \
