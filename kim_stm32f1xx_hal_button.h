@@ -44,6 +44,17 @@
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0
 
+/***** Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
+ ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
+ ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
+ ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
+ ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
 /* ====================== Customization END ======================== */
 
 
@@ -131,6 +142,14 @@ struct Kim_Button_Status {
 #else
     #define KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE    static inline
 #endif /* FORCE_INLINE */
+
+/* Macro to connect macro */
+#define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
+#define KIM_BUTTON_CONNECT_1(_a, _b)        KIM_BUTTON_CONNECT_2(_a, _b)
+#define KIM_BUTTON_CONNECT_2(_a, _b)        _a ## _b
+#define KIM_BUTTON_CONNECT3(_a, _b, _c)     KIM_BUTTON_CONNECT3_1(_a, _b, _c)
+#define KIM_BUTTON_CONNECT3_1(_a, _b, _c)   KIM_BUTTON_CONNECT3_2(_a, _b, _c)
+#define KIM_BUTTON_CONNECT3_2(_a, _b, _c)   _a ## _b ## _c
 
 /** 
  * @p               [private-use]
@@ -419,7 +438,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
  * @note    Error will occur if EXTI_TRIGGER_X is set as EXTI_TRIGGER_RISING_FALLING.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
-    struct Kim_Button_Status Kim_Button_ ## __name;                             \
+    struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);\
                                                                                 \
     static void Kim_Button_Asynchronous_Handler_ ## __name(                     \
         void (*short_push_callback)(void),                                      \
@@ -428,7 +447,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
     )                                                                           \
     {                                                                           \
         Kim_Button_PrivateUse_AsynchronousHandler(                              \
-            &(Kim_Button_ ## __name),                                           \
+            &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name)),              \
             GPIOx_BASE,                                                         \
             GPIO_PIN_X,                                                         \
             EXTI_TRIGGER_X,                                                     \
@@ -441,11 +460,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
     static void Kim_Button_Handler_During_IT_ ## __name(void)                   \
     {                                                                           \
         Kim_Button_PrivateUse_ITHandler(                                        \
-            &(Kim_Button_ ## __name)                                            \
+            &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name))               \
         );                                                                      \
     }                                                                           \
                                                                                 \
-    KIM_BUTTON_C_API void Kim_Button_Init_ ## __name (void)                     \
+    KIM_BUTTON_C_API void                                                       \
+    KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name) (void)           \
     {                                                                           \
         /* Assert the EXTI Trigger (use array[-1] to raise error) */            \
         static const char                                                       \
@@ -453,7 +473,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         (void)the_assert;                                                       \
                                                                                 \
         Kim_Button_PrivateUse_InitButton(                                       \
-            &(Kim_Button_ ## __name),                                           \
+            &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name)),              \
             GPIOx_BASE,                                                         \
             GPIO_PIN_X,                                                         \
             EXTI_TRIGGER_X,                                                     \
@@ -469,9 +489,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
  *          another file before you want to use them.
  * @param   __name - the name of your button. remain the same as it in `KIM_BUTTON__REGISTER`.
  */
-#define KIM_BUTTON__DECLARE(__name)                                             \
-    extern struct Kim_Button_Status Kim_Button_ ## __name;                      \
-    KIM_BUTTON_C_API void Kim_Button_Init_ ## __name (void);
+#define KIM_BUTTON__DECLARE(__name)                                                         \
+    extern struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);     \
+    KIM_BUTTON_C_API void KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name)(void);
 
 
 #endif /* KIM_STM32F1XX_HAL_BUTTON_H */
