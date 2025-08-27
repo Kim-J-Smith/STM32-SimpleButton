@@ -1,5 +1,8 @@
 # STM32-SimpleButton
-[Chinese]: 一个非常精简的STM32按键框架，适配STM32 HAL库。[English]: A very tiny STM32 key(button) frame, compatible with the STM32 HAL library.
+
+[Chinese] :  一个非常精简的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击。
+
+[English] : A very tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button.
 
 ---
 
@@ -125,21 +128,21 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 
 #### How to use：
 
-* First, suppose we have three files (' main.c ', 'my_button.c', 'my_button.h'). Among them, the my_button.c file stores the key codes, the my_button.h file stores the necessary declarations, and the main.c call code.
+* First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the key codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
 
-* Then, in 'my_button.c', first import the header file 'kim_stm32f1xx_hal_button.h', and use the **KIM_BUTTON__REGISTER** macro to generate the required code. When my button is triggered, it will produce a rising and falling edge signal at **PA7**. I want to name the button **myButton**
+* Then, in `my_button.c`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
   
   ```c
   /* The following is the content of my_button.c */ 
   #include "kim_stm32f1xx_hal_button.h" // Include header files
   
-  // The sequence is port base address, pin number, trigger edge selection, and key name
+  // The sequence is port base address, pin number, trigger edge selection, and key name(up to you)
   KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // Note: No need to add ;
   ```
   
   
 
-* Next, in 'my_button.h', first import the header file 'kim_stm32f1xx_hal_button.h', and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
+* Next, in `my_button.h`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
   
   ```c
   /* The following is the content of my_button.h */ 
@@ -155,24 +158,24 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
   
 
 ```c
-/* 以下是 main.c 内容 */ 
+/* The following is the content of main.c */ 
 /* ... */
 #include "my_button.h" 
 
-// Press the callback function briefly. After pressing the key briefly, it will be executed (the function name is arbitrary)
+// Callback function of short press. After shor pressing, it will be executed (the function name is arbitrary)
 void short_push_callback(void) { ... } 
 
-// 长按回调函数，长按后会执行它 (函数名随意) 
+// Callback function of long press. After long pressing, it will be executed (the function name is arbitrary).
 void long_push_callback(void) { ... } 
 
-// Long press the callback function. After long pressing, it will be executed (the function name is arbitrary).
+// Callback function of double press. After double pressing, it will be executed (the function name is arbitrary).
 void double_push_callback(void) { ... } 
 
 int main(void) 
 {
   /* ... Other irrelevant code ... */
 
-  // 【 First Place 】 : Call the initialization function before the while loop. The name of the initialization function is Kim_Button_Init_ plus the key name you defined.
+  // 【 First Place 】 : Call the initialization function before the while loop. The name of the initialization function is Kim_Button_Init_ plus the key(button) name you defined.
   //     For example: I also defined a key named ABC in my_button.c and my_button.h.
   //     Then here I should call another function, Kim_Button_Init_ABC()
   Kim_Button_Init_myButton();
@@ -202,7 +205,7 @@ int main(void)
 // Writing Method One:
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    /* ... Other irrelevant code ... */
-  if(GPIO_Pin == GPIO_PIN_7) // 假设我的按钮链接的是 PA7
+  if(GPIO_Pin == GPIO_PIN_7) // Suppose my button is linked to PA7
   {
       // Call the interrupt handling function of the key
       Kim_Button_myButton.method_interrupt_handler();
@@ -211,7 +214,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 } 
 
 // Writing Method Two: (You can try to find this callback function in the stm32_xxxx_it.c file. If it's not available, write it yourself.
-void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7 
+void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 {
    /* ... Other irrelevant code ... */
   if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != 0)
