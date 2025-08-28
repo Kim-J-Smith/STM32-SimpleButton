@@ -11,6 +11,8 @@
 #### 简介：
 
 * 本项目仅含**一个**文件，即 `kim_stm32f1xx_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
+  
+  
 
 #### 使用方法：
 
@@ -112,11 +114,29 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 }
 ```
 
+
+
+#### 动态设置：
+
+* 可以在代码中为每个按键设置独立的长按判定时间，示例如下：
+
+```c
+// 先初始化
+Kim_Button_Init_myButton();
+
+// 将 myButton 按键的长按判定时间延长至3000ms(改设置必须在 Init 函数之后)
+Kim_Button_myButton.public_long_push_min_time = 3000;
+```
+
+
+
 #### 注意事项：
 
 * 使用了SysTick，可能会与HAL_Delay冲突。
 
 * 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
+  
+  
 
 #### 自定义选项（宏）：
 
@@ -135,7 +155,7 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
 // 松开按键后，判定双击的窗口时间。在此期间再次按下，判定为双击。
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 
 // 长按判定的最小时间，超过这个时间就判定为长按
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
@@ -158,16 +178,33 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0 // 如果 CubeMX生成了EXTI相关代码，宏改为1
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0 // 如果 CubeMX生成了NVIC相关代码，宏改为1
 
+/***** Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
+ ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
+ ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
+ ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
+ ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
+// 这个宏定义是用来自定义前缀的，默认为Kim_Button_。如果修改为KEY_，那么在main.c使用的时候
+// 就要使用 `KEY_Init_##__name()` 函数初始化，而非使用默认的 `Kim_Button_Init_##__name()`
+// 相应的，也应该使用 KEY_##__name.method_asynchronous_handler(..., ..., ...) 以及
+// KEY_##__name.method_interrupt_handler()
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
-  
+
 
 ### [English]:
 
 #### Brief introduction:
 
 * This project contains only one file, namely `kim_stm32f1xx_hal_button.h` . All the required code can be generated simply by using one macro definition.
+  
+  
 
 #### How to use：
 
@@ -270,11 +307,29 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 }
 ```
 
+
+
+#### Dynamic set:
+
+* You can set an independent long-press determination time for each key in the code. An example is as follows:
+
+```c
+// Initialize first
+Kim_Button_Init_myButton();
+
+// Extend the long-press determination time of the myButton key to 3000ms(this setting must be changed after the Init function).
+Kim_Button_myButton.public_long_push_min_time = 3000;
+```
+
+
+
 #### Note：
 
 * SysTick is used, which may conflict with HAL Delay()
 
 * Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
+  
+  
 
 #### Customizable options (Macro):
 
@@ -293,7 +348,7 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
 // After releasing the key, determine the window time for double-clicking. If you press again during this period, it will be judged as a double-click.
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 
 // The minimum duration for long press determination. If it exceeds this time, it will be determined as a long press
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
@@ -314,7 +369,16 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0//If CubeMX generates EXTI code, change the macro to 1
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0//If CubeMX generates NVIC code, change the macro to 1
 
+/***** Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
+ ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
+ ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
+ ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
+ ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
 /* ====================== Customization END ======================== */
 ```
-
-

@@ -28,7 +28,7 @@
 #define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
 
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(500)         /* 500 ms */
+#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
@@ -446,17 +446,20 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
 
 
 /**
- * @def     KIM_BUTTON__REGISTER
- * @brief   This is a template for generating code of button.
- *          It will generate 3 functions, including:
- *      @arg `Kim_Button_Init_ ## __name`
- *      @arg `Kim_Button_Asynchronous_Handler_ ## __name`
- *      @arg `Kim_Button_Handler_During_IT_ ## __name`
- * @param   GPIOx_BASE - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
- * @param   GPIO_PIN_X - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
- * @param   EXTI_TRIGGER_X - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
- * @param   __name - the name of your button. can be any string.
- * @note    Error will occur if EXTI_TRIGGER_X is set as EXTI_TRIGGER_RISING_FALLING.
+ * @def         KIM_BUTTON__REGISTER
+ * @brief       This is a template for generating code of button.
+ *              It will generate 3 functions, including:
+ *      @arg `Kim_Button_Init_ ## __name` [extern "C" public-use].
+ *      @arg `Kim_Button_Asynchronous_Handler_ ## __name` [static private-use].
+ *      @arg `Kim_Button_Handler_During_IT_ ## __name` [static private-use].
+ * @param       GPIOx_BASE - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
+ * @param       GPIO_PIN_X - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
+ * @param       EXTI_TRIGGER_X - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
+ * @param       __name - the name of your button. can be any string.
+ * @attention   @p Error(array[-1]) will occur:
+ *              1. If EXTI_TRIGGER_X is set as EXTI_TRIGGER_RISING_FALLING or EXTI_TRIGGER_NONE.
+ *              2. If GPIOx_BASE is invalid.
+ *              3. If GPIO_PIN_X is invalid.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
     struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);\
@@ -513,11 +516,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
     }
     
 /**
- * @def     KIM_BUTTON__DECLARE
- * @brief   You can use `KIM_BUTTON__REGISTER` to generate code in one file.
- *          And then, you need to use `KIM_BUTTON__DECLARE` to declare them in
- *          another file before you want to use them.
- * @param   __name - the name of your button. remain the same as it in `KIM_BUTTON__REGISTER`.
+ * @def         KIM_BUTTON__DECLARE
+ * @brief       You can use `KIM_BUTTON__REGISTER` to generate code in one file.
+ *              And then, you need to use `KIM_BUTTON__DECLARE` to declare them in
+ *              another file before you want to use them.
+ * @param       __name - the name of your button. remain the same as it in `KIM_BUTTON__REGISTER`.
  */
 #define KIM_BUTTON__DECLARE(__name)                                                         \
     extern struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);     \
