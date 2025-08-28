@@ -86,10 +86,10 @@ enum Kim_Button_State {
 
 struct Kim_Button_Status {
     /** @p [private] This member variable will be changed only in interrupt service routine. */
-    uint32_t                                private_time_stamp_interrupt;
+    volatile uint32_t                               private_time_stamp_interrupt;
 
     /** @p [private] This member variable will be changed only in while loop. */
-    uint32_t                                private_time_stamp_loop;
+    uint32_t                                        private_time_stamp_loop;
 
     /** @b [public] Method for asynchronous handler. Use this method in while loop. */
     void (* method_asynchronous_handler) (
@@ -102,13 +102,13 @@ struct Kim_Button_Status {
     void (* method_interrupt_handler) (void);
 
     /** @b [public] This member variable is used to record the long-push time. */
-    uint16_t                                public_long_push_min_time;
+    uint16_t                                        public_long_push_min_time;
 
     /** @p [private] This member variable is used to record the state of each button. */
-    ENUM_BITFIELD (enum Kim_Button_State)   private_state : 8;
+    volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 8;
 
     /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
-    uint8_t                                 private_push_time;
+    uint8_t                                         private_push_time;
 };
 
 #ifdef __cplusplus
