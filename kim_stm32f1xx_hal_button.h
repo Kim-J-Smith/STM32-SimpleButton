@@ -2,7 +2,7 @@
  * @file            kim_stm32f1xx_hal_button.h
  * @author          Kim-J-Smith
  * @brief           Kim Library to offer a template for button [STM32 HAL]
- * @version         0.0.3 ( 0003L )
+ * @version         0.0.4 ( 0004L )
  *          (match with stm32f1xx_hal.h version 1.0.0)
  * @date            2025-08-26
  * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
@@ -12,7 +12,7 @@
 # include "stm32f1xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0003L
+#define     KIM_STM32F1XX_HAL_BUTTON_H  0004L
 
 /* ================================================================================ */
 /**    @b ATTENTION Kim_Button use SysTick, which conflicts with with Delay_xxx    **/
@@ -55,6 +55,10 @@
  ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
  ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
+/***** Critical Zone *****/
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
+#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
 
 /* ====================== Customization END ======================== */
 
@@ -200,8 +204,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 {
     /* Initialize the member variables */
     self->private_push_time = 0;
+
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN();
     self->private_state = Kim_Button_State_Wait_For_Interrupt;
     self->private_time_stamp_interrupt = 0;
+    KIM_BUTTON_CRITICAL_ZONE_END();
+
     self->private_time_stamp_loop = 0;
     self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
 
@@ -246,6 +254,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         break;
     default:
         /* ... error handler ... */
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
 
@@ -319,6 +330,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     default:
         /* ... error handler ... */
         the_exti_IRQ = EXTI0_IRQn;
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
     HAL_NVIC_SetPriority(
@@ -375,8 +389,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
 {
     uint8_t Normal_Bit_Val = (exti_trigger_x == EXTI_TRIGGER_RISING) ? 0 : 1;
 
+    /* Critical Zone Begin */
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN();
+
     switch ((enum Kim_Button_State)self->private_state) {
     case Kim_Button_State_Wait_For_Interrupt:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Push_Delay:
         if(HAL_GetTick() - self->private_time_stamp_interrupt 
@@ -390,6 +408,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
                 self->private_state = Kim_Button_State_Wait_For_End;
             }
         }
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Wait_For_End:
         if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
@@ -398,11 +417,17 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
             self->private_time_stamp_loop = HAL_GetTick();
             self->private_state = Kim_Button_State_Release_Delay;
         }
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Double_Push:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
         KIM_BUTTON_SAFE_CALLBACK(double_push_callback);
         self->private_push_time = 0;
+
+        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_state = Kim_Button_State_Wait_For_Interrupt;
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Wait_For_Double:
         if(HAL_GetTick() - self->private_time_stamp_loop
@@ -410,17 +435,23 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt
             > (uint32_t)self->public_long_push_min_time)
         {
+            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
         } else {
+            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(short_push_callback);
         }
         self->private_push_time = 0;
+
+        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_state = Kim_Button_State_Wait_For_Interrupt;
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Release_Delay:
         if(HAL_GetTick() - self->private_time_stamp_loop 
@@ -434,9 +465,14 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
                 self->private_state = Kim_Button_State_Wait_For_End;
             }
         }
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     default:
         /* ... error handler ... */
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
 }

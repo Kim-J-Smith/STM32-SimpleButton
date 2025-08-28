@@ -6,6 +6,34 @@
 
 ---
 
+### 新增功能特性(v0.0.4)：
+
++ ✅ **临界区优化**：多线程数据安全、不冲突
+
++ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
+
+### 已有功能特性：
+
++ ✅ **按键事件完善**：支持短按、长按、双击 （长按判定时间可以每个按键单独配置）
+
++ ✅ **静态参数检查**：静态检查宏函数参数，确保生成代码准确、可靠
+
++ ✅ **软件消抖**：采用状态机，非阻塞消抖
+
++ ✅ **二次确认**：状态机内部对引脚状态二次确认，屏蔽抖动影响
+
++ ✅ **回调支持**：每个按键短按、长按、双击均支持独立的回调函数注册，回调函数允许为空
+
++ ✅ **内存精简**：数据结构紧凑，内存占用少
+
++ ✅ **配置便捷**：配置相关宏定义集中在文件开头，注释详尽
+
++ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码
+
++ ✅ **跨平台友好**：支持GCC与ArmCC等编译器
+
+---
+
 ### [Chinese]:
 
 #### 简介：
@@ -132,7 +160,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### 注意事项：
 
-* 使用了SysTick，可能会与HAL_Delay冲突。
+* 使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】
 
 * 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
   
@@ -178,7 +206,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0 // 如果 CubeMX生成了EXTI相关代码，宏改为1
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0 // 如果 CubeMX生成了NVIC相关代码，宏改为1
 
-/***** Name Prefix *****/
+/***** Name Prefix(自定义前缀名) *****/
 /** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
  ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
  **                                                                                     **
@@ -192,6 +220,10 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 // 相应的，也应该使用 KEY_##__name.method_asynchronous_handler(..., ..., ...) 以及
 // KEY_##__name.method_interrupt_handler()
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
+/***** Critical Zone(临界区保护，多线程时必须使用) *****/
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
+#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
 
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
@@ -325,7 +357,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### Note：
 
-* SysTick is used, which may conflict with HAL Delay()
+* SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]
 
 * Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
   
@@ -379,6 +411,10 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
  ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
  ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
+/***** Critical Zone *****/
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
+#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
 
 /* ====================== Customization END ======================== */
 ```
