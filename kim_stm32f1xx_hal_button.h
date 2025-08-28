@@ -56,6 +56,10 @@
  ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
+/***** Critical Zone *****/
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
+#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+
 /* ====================== Customization END ======================== */
 
 
@@ -200,8 +204,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 {
     /* Initialize the member variables */
     self->private_push_time = 0;
+
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN();
     self->private_state = Kim_Button_State_Wait_For_Interrupt;
     self->private_time_stamp_interrupt = 0;
+    KIM_BUTTON_CRITICAL_ZONE_END();
+
     self->private_time_stamp_loop = 0;
     self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
 
@@ -246,6 +254,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         break;
     default:
         /* ... error handler ... */
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
 
@@ -319,6 +330,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     default:
         /* ... error handler ... */
         the_exti_IRQ = EXTI0_IRQn;
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
     HAL_NVIC_SetPriority(
@@ -375,6 +389,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
 {
     uint8_t Normal_Bit_Val = (exti_trigger_x == EXTI_TRIGGER_RISING) ? 0 : 1;
 
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN();
     switch ((enum Kim_Button_State)self->private_state) {
     case Kim_Button_State_Wait_For_Interrupt:
         break;
@@ -437,8 +452,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         break;
     default:
         /* ... error handler ... */
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
         break;
     }
+    KIM_BUTTON_CRITICAL_ZONE_END();
 }
 
 /* ================ Private-use functions END ====================== */
