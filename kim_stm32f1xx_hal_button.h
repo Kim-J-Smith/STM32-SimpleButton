@@ -8,6 +8,7 @@
  * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
  *          Refer to the LICENCE in root for more details.
  */
+# include <stdint.h>
 # include "stm32f1xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
@@ -123,6 +124,25 @@ struct Kim_Button_Status {
     (( (EXTI_TRIGGER_X == EXTI_TRIGGER_RISING_FALLING)  \
     || (EXTI_TRIGGER_X == EXTI_TRIGGER_NONE) ) ? -1 : 1)
 
+/* Macro for judge GPIOx_BASE and GPIO_PIN_X */
+#define KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, PIN)      \
+    ( ((                                                \
+        (GPIOx_BASE) == GPIOA_BASE ||                   \
+        (GPIOx_BASE) == GPIOB_BASE ||                   \
+        (GPIOx_BASE) == GPIOC_BASE ||                   \
+        (GPIOx_BASE) == GPIOD_BASE ||                   \
+        (GPIOx_BASE) == GPIOE_BASE                      \
+    ) && (                                              \
+        (PIN) == GPIO_PIN_0 || (PIN) == GPIO_PIN_1 ||   \
+        (PIN) == GPIO_PIN_2 || (PIN) == GPIO_PIN_3 ||   \
+        (PIN) == GPIO_PIN_4 || (PIN) == GPIO_PIN_5 ||   \
+        (PIN) == GPIO_PIN_6 || (PIN) == GPIO_PIN_7 ||   \
+        (PIN) == GPIO_PIN_8 || (PIN) == GPIO_PIN_9 ||   \
+        (PIN) == GPIO_PIN_10 || (PIN) == GPIO_PIN_11 || \
+        (PIN) == GPIO_PIN_12 || (PIN) == GPIO_PIN_13 || \
+        (PIN) == GPIO_PIN_14 || (PIN) == GPIO_PIN_15    \
+    )) ? 1 : -1 )
+
 /* Macro for using functin with security */
 #define KIM_BUTTON_SAFE_CALLBACK(_callback)         \
     do { if((_callback) != ((void*)0)) { _callback(); } } while(0U)
@@ -147,6 +167,7 @@ struct Kim_Button_Status {
 #define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
 #define KIM_BUTTON_CONNECT_1(_a, _b)        KIM_BUTTON_CONNECT_2(_a, _b)
 #define KIM_BUTTON_CONNECT_2(_a, _b)        _a ## _b
+
 #define KIM_BUTTON_CONNECT3(_a, _b, _c)     KIM_BUTTON_CONNECT3_1(_a, _b, _c)
 #define KIM_BUTTON_CONNECT3_1(_a, _b, _c)   KIM_BUTTON_CONNECT3_2(_a, _b, _c)
 #define KIM_BUTTON_CONNECT3_2(_a, _b, _c)   _a ## _b ## _c
@@ -471,8 +492,15 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
     {                                                                           \
         /* Assert the EXTI Trigger (use array[-1] to raise error) */            \
         static const char                                                       \
-            the_assert[KIM_BUTTON_JUDGE_TRIGGER(EXTI_TRIGGER_X)] = {0};         \
-        (void)the_assert;                                                       \
+            assert_exti_trg[KIM_BUTTON_JUDGE_TRIGGER(EXTI_TRIGGER_X)] = {0};    \
+        (void)assert_exti_trg;                                                  \
+                                                                                \
+        /* Assert the GPIO_BASE and PIN (use array[-1] to raise error) */       \
+        static const char                                                       \
+            assert_gpio_pin[                                                    \
+                KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, GPIO_PIN_X)               \
+            ] = {0};                                                            \
+        (void)assert_gpio_pin;                                                  \
                                                                                 \
         Kim_Button_PrivateUse_InitButton(                                       \
             &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name)),              \
