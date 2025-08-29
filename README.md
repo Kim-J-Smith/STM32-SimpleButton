@@ -6,13 +6,11 @@
 
 ---
 
-### 新增功能特性(v0.0.5)：
+### 新增功能特性(v0.1.0)：
 
-+ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
++ ✅ **新增按键单独设置冷却时间**：每个按键单独设置按键冷却时间，灵活性更高
 
-+ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
-
-+ ✅ **兼容增强**：修复与HAL_Delay函数的潜在冲突
++ ✅ **新增按键单独设置双击判定时间**：可以为每个按键设置双击判定时间，灵活度更高
 
 ### 已有功能特性：
 
@@ -22,7 +20,7 @@
 
 + ✅ **软件消抖**：采用状态机，非阻塞消抖
 
-+ ✅ **二次确认**：状态机内部对引脚状态二次确认，屏蔽抖动影响
++ ✅ **二次确认**：状态机内部对引脚状态二次确认，屏蔽抖动与意外触发中断的影响
 
 + ✅ **回调支持**：每个按键短按、长按、双击均支持独立的回调函数注册，回调函数允许为空
 
@@ -37,6 +35,12 @@
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
 + ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
+
++ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
+
++ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
+
++ ✅ **异步处理**：在重循环负载情况下，外部中断触发保证按键请求不会被忽略
 
 ---
 
@@ -162,6 +166,24 @@ Kim_Button_Init_myButton();
 Kim_Button_myButton.public_long_push_min_time = 3000;
 ```
 
++ 可以在代码中为每个按键设置独立的冷却时间，示例如下：
+
+```c
+// 先初始化
+Kim_Button_Init_myButton();
+
+Kim_Button_myButton.public_cool_down_time = 5000; // 每5s才能触发一次
+```
+
++ 可以在代码中为每个按键设置独立的双击判定时间，示例如下：
+
+```c
+// 先初始化
+Kim_Button_Init_myButton();
+
+Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（减少短按响应延迟，放弃双击功能）
+```
+
 
 
 #### 注意事项：
@@ -196,6 +218,9 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 // 松开按键后，延时（非阻塞）用于消抖的时间
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+// 按键功能执行完毕后的冷却时间
+#define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
 /***** NVIC Priority config(NVIC 中断优先级配置) *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick 抢占优先级
@@ -373,7 +398,23 @@ Kim_Button_Init_myButton();
 Kim_Button_myButton.public_long_push_min_time = 3000;
 ```
 
++ An independent cooldown time can be set for each key in the code. An example is as follows:
 
+```c
+// Initialize first
+Kim_Button_Init_myButton();
+
+Kim_Button_myButton.public_cool_down_time = 5000; // It can only be triggered once every 5 seconds
+```
+
++ You can set an independent double-click determination time for each key in the code. An example is as follows:
+
+```c
+// Initialize first
+Kim_Button_Init_myButton();
+
+Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-click determination (reduce the response delay of short presses and abandon the double-click function)
+```
 
 #### Note：
 
@@ -407,6 +448,9 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 // The delay (non-blocking) used for debouncing after releasing the key
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
+
+// CD time for button
+#define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
 /***** NVIC Priority config *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick PreemptionPriority
