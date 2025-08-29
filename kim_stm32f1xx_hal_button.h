@@ -73,8 +73,9 @@
 extern "C" {
 #endif /* __cplusplus enum & struct */
 
+/* The enum is for State Machine. */
 enum Kim_Button_State {
-    Kim_Button_State_Wait_For_Interrupt,
+    Kim_Button_State_Wait_For_Interrupt = 0,
 
     Kim_Button_State_Push_Delay,
 
@@ -94,7 +95,8 @@ enum Kim_Button_State {
     #define ENUM_BITFIELD(type)     unsigned int 
 #endif /* ENUM_BITFIELD */
 
-struct Kim_Button_Status {
+/* This struct is for status and behaviour of each button. */
+struct Kim_Button_TypeDef {
     /** @p [private] This member variable will be changed only in interrupt service routine. */
     volatile uint32_t                               private_time_stamp_interrupt;
 
@@ -201,7 +203,7 @@ struct Kim_Button_Status {
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
-    struct Kim_Button_Status* const self,
+    struct Kim_Button_TypeDef* const self,
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
     const uint32_t exti_trigger_x,
@@ -375,7 +377,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
-    struct Kim_Button_Status* const self
+    struct Kim_Button_TypeDef* const self
 )
 {
     if( ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Double
@@ -399,7 +401,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
-    struct Kim_Button_Status* const self,
+    struct Kim_Button_TypeDef* const self,
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
     const uint8_t Normal_Bit_Val,
@@ -520,7 +522,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
  *              3. If GPIO_PIN_X is invalid.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
-    struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);\
+    struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name);\
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
@@ -584,7 +586,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
  * @param       __name - the name of your button. remain the same as it in `KIM_BUTTON__REGISTER`.
  */
 #define KIM_BUTTON__DECLARE(__name)                                                         \
-    extern struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);     \
+    extern struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);    \
     KIM_BUTTON_C_API void KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name)(void);
 
 
