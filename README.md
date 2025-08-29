@@ -12,6 +12,8 @@
 
 + ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
 
++ ✅ **兼容增强**：修复与HAL_Delay函数的潜在冲突
+
 ### 已有功能特性：
 
 + ✅ **按键事件完善**：支持短按、长按、双击 （长按判定时间可以每个按键单独配置）
@@ -164,7 +166,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### 注意事项：
 
-* 使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】
+* ~~使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】~~ （v0.0.5后完全不冲突）
 
 * 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
   
@@ -368,7 +370,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### Note：
 
-* SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]
+* ~~SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]~~ (After v0.0.5, there is no conflict)
 
 * Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
   
