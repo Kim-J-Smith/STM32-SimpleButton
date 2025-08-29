@@ -65,8 +65,9 @@
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
-/***** Macro to begin debug mode *****/
+/***** Macro for debug mode *****/
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... */
 
 /* ====================== Customization END ======================== */
 
@@ -226,6 +227,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     /* Initialize only once */
     if(self->private_is_init != 0) {
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         return;
@@ -263,6 +265,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     /* error handler */
  #if defined(DEBUG) || defined(_DEBUG)
     if(check_error != 0) {
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
     }
  #else
@@ -295,6 +298,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     default:
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;
@@ -371,6 +375,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         /* ... error handler ... */
         the_exti_IRQ = EXTI0_IRQn;
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;
@@ -512,6 +517,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         /* ... error handler ... */
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;

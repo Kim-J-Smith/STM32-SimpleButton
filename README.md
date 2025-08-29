@@ -238,6 +238,13 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
+/***** Macro for debug mode *****/
+// 将宏的值设置为1可以启动调试模式
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+
+// DEBUG模式下，发生异常会调用的内容，需用户自行填写
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
@@ -433,6 +440,12 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 /* define follow macro any time */
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug mode *****/
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+
+// In DEBUG mode, the content that will be called in case of an exception needs to be filled in by the user themselves
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
 /* ====================== Customization END ======================== */
 ```
