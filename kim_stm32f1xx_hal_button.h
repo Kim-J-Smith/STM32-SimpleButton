@@ -123,6 +123,12 @@ struct Kim_Button_TypeDef {
     /** @b [public] This member variable is used to record the long-push time. */
     uint16_t                                        public_long_push_min_time;
 
+    /** @b [public] This member variable is used to record the cool-down time. */
+    uint16_t                                        public_cool_down_time;
+
+    /** @b [public] This member variable is used to record the double push max time. */
+    uint16_t                                        public_double_push_max_time;
+
     /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
     uint8_t                                         private_push_time;
 
@@ -240,14 +246,18 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
     /* Initialize the member variables */
     self->private_push_time = 0;
+    self->private_time_stamp_loop = 0;
 
+    /* volatile variables */
     KIM_BUTTON_CRITICAL_ZONE_BEGIN();
     self->private_state = Kim_Button_State_Wait_For_Interrupt;
     self->private_time_stamp_interrupt = 0;
     KIM_BUTTON_CRITICAL_ZONE_END();
 
-    self->private_time_stamp_loop = 0;
+    /* public variables */
     self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
+    self->public_cool_down_time = KIM_BUTTON_COOL_DOWN_TIME;
+    self->public_double_push_max_time = KIM_BUTTON_DOUBLE_PUSH_MAX_TIME;
 
     /* Initialize the public method */
     self->method_asynchronous_handler = method_asynchronous_handler;
@@ -475,7 +485,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
-            > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME)
+            > (uint32_t)self->public_double_push_max_time)
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
@@ -516,7 +526,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         break;
     case Kim_Button_State_Cool_Down:
         if(HAL_GetTick() - self->private_time_stamp_loop 
-            > KIM_BUTTON_COOL_DOWN_TIME)
+            > (uint32_t)self->public_cool_down_time)
         {
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
         }
