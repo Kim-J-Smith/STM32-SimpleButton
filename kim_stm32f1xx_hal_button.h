@@ -58,12 +58,12 @@
 
 /***** Critical Zone *****/
 /* define follow macro when multi-thread */
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq() */} while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq() */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
 
 /* define follow macro any time */
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq() } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq() } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
 /* ====================== Customization END ======================== */
 
