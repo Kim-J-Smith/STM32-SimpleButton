@@ -23,7 +23,7 @@
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
-#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
+#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_GetTickFreq()))
 /* calculate the tick with the time */
 #define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
 
@@ -64,6 +64,9 @@
 /* define follow macro any time */
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro to begin debug mode *****/
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
 
 /* ====================== Customization END ======================== */
 
@@ -180,6 +183,11 @@ struct Kim_Button_TypeDef {
 /* Macro for suggest inline of private-use functions */
 #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
 
+/* Macro for debug */
+#if KIM_BUTTON_USE_DEBUG_MODE != 0
+    #define DEBUG
+#endif
+
 /* Macro to connect macro */
 #define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
 #define KIM_BUTTON_CONNECT_1(_a, _b)        KIM_BUTTON_CONNECT_2(_a, _b)
@@ -242,15 +250,24 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
     /* SysTick configure */
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK == 0)
-    SysTick->LOAD = (uint32_t)(KIM_BUTTON_SYSTICK_ONE_TICK - 1UL);
-    SysTick->VAL  = 0;
-    SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk 
-                    | SysTick_CTRL_CLKSOURCE_Msk;
-    HAL_NVIC_SetPriority(SysTick_IRQn, 
+    uint32_t check_error = 0U;
+
+    check_error = HAL_SYSTICK_Config(KIM_BUTTON_SYSTICK_ONE_TICK);
+    HAL_NVIC_SetPriority(SysTick_IRQn,
         KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority,
-        KIM_BUTTON_NVIC_SYSTICK_SubPriority
-    ); /* SysTick is within the core, don't need to be enabled(NVIC_Enable). */
-    uwTickPrio = (1UL << __NVIC_PRIO_BITS) - 1UL;
+        0UL /* Make sure it can promptly preempt other low-priority interrupts */
+    ); 
+    /* SysTick is within the core, don't need to be enabled(NVIC_Enable). */
+    uwTickPrio = KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority;
+
+    /* error handler */
+ #if defined(DEBUG) || defined(_DEBUG)
+    if(check_error != 0) {
+        while(1) {}
+    }
+ #else
+    (void)check_error;
+ #endif /* DEBUG */
 #endif /*KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK*/
 
 
