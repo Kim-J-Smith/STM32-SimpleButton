@@ -6,11 +6,13 @@
 
 ---
 
-### 新增功能特性(v0.0.4)：
+### 新增功能特性(v0.0.5)：
 
-+ ✅ **临界区优化**：多线程数据安全、不冲突
++ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
 
-+ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
++ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
+
++ ✅ **兼容增强**：修复与HAL_Delay函数的潜在冲突
 
 ### 已有功能特性：
 
@@ -31,6 +33,10 @@
 + ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码
 
 + ✅ **跨平台友好**：支持GCC与ArmCC等编译器
+
++ ✅ **临界区保护**：多线程数据安全、不冲突
+
++ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
 
 ---
 
@@ -160,7 +166,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### 注意事项：
 
-* 使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】
+* ~~使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】~~ （v0.0.5后完全不冲突）
 
 * 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
   
@@ -222,8 +228,22 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone(临界区保护，多线程时必须使用) *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+// 以下两个宏定义在多线程场景下需要取消do...while内部注释
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
+
+/* define follow macro any time */
+// 以下两个宏定义即使在单线程下也需要定义
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug mode *****/
+// 将宏的值设置为1可以启动调试模式
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+
+// DEBUG模式下，发生异常会调用的内容，需用户自行填写
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
@@ -357,7 +377,7 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 #### Note：
 
-* SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]
+* ~~SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]~~ (After v0.0.5, there is no conflict)
 
 * Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
   
@@ -413,8 +433,19 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug mode *****/
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+
+// In DEBUG mode, the content that will be called in case of an exception needs to be filled in by the user themselves
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
 /* ====================== Customization END ======================== */
 ```

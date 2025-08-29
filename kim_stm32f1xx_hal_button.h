@@ -2,7 +2,7 @@
  * @file            kim_stm32f1xx_hal_button.h
  * @author          Kim-J-Smith
  * @brief           Kim Library to offer a template for button [STM32 HAL]
- * @version         0.0.4 ( 0004L )
+ * @version         0.0.5 ( 0005L )
  *          (match with stm32f1xx_hal.h version 1.0.0)
  * @date            2025-08-26
  * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
@@ -12,7 +12,7 @@
 # include "stm32f1xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0004L
+#define     KIM_STM32F1XX_HAL_BUTTON_H  0005L
 
 /* ================================================================================ */
 /**    @b ATTENTION Kim_Button use SysTick, which conflicts with with Delay_xxx    **/
@@ -23,7 +23,7 @@
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
-#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
+#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_GetTickFreq()))
 /* calculate the tick with the time */
 #define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
 
@@ -57,8 +57,17 @@
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug mode *****/
+#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... */
 
 /* ====================== Customization END ======================== */
 
@@ -68,8 +77,9 @@
 extern "C" {
 #endif /* __cplusplus enum & struct */
 
+/* The enum is for State Machine. */
 enum Kim_Button_State {
-    Kim_Button_State_Wait_For_Interrupt,
+    Kim_Button_State_Wait_For_Interrupt = 0,
 
     Kim_Button_State_Push_Delay,
 
@@ -89,7 +99,8 @@ enum Kim_Button_State {
     #define ENUM_BITFIELD(type)     unsigned int 
 #endif /* ENUM_BITFIELD */
 
-struct Kim_Button_Status {
+/* This struct is for status and behaviour of each button. */
+struct Kim_Button_TypeDef {
     /** @p [private] This member variable will be changed only in interrupt service routine. */
     volatile uint32_t                               private_time_stamp_interrupt;
 
@@ -109,11 +120,14 @@ struct Kim_Button_Status {
     /** @b [public] This member variable is used to record the long-push time. */
     uint16_t                                        public_long_push_min_time;
 
-    /** @p [private] This member variable is used to record the state of each button. */
-    volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 8;
-
     /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
     uint8_t                                         private_push_time;
+
+    /** @p [private] This member variable is used to record the state of each button. */
+    volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
+
+    /** @p [private] This member variable is used to record the state of initialization. */
+    uint8_t                                         private_is_init : 4;
 };
 
 #ifdef __cplusplus
@@ -167,6 +181,14 @@ struct Kim_Button_Status {
     #define KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE    static inline
 #endif /* FORCE_INLINE */
 
+/* Macro for suggest inline of private-use functions */
+#define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+
+/* Macro for debug */
+#if KIM_BUTTON_USE_DEBUG_MODE != 0
+    #define DEBUG
+#endif
+
 /* Macro to connect macro */
 #define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
 #define KIM_BUTTON_CONNECT_1(_a, _b)        KIM_BUTTON_CONNECT_2(_a, _b)
@@ -190,7 +212,7 @@ struct Kim_Button_Status {
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
-    struct Kim_Button_Status* const self,
+    struct Kim_Button_TypeDef* const self,
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
     const uint32_t exti_trigger_x,
@@ -202,6 +224,17 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     void (* method_interrupt_handler) (void)
 )
 {
+    /* Initialize only once */
+    if(self->private_is_init != 0) {
+#if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
+        while(1) {}
+#endif /* DEBUG */
+        return;
+    } else {
+        self->private_is_init = 1;
+    }
+
     /* Initialize the member variables */
     self->private_push_time = 0;
 
@@ -219,15 +252,25 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
     /* SysTick configure */
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK == 0)
-    SysTick->LOAD = (uint32_t)(KIM_BUTTON_SYSTICK_ONE_TICK - 1UL);
-    SysTick->VAL  = 0;
-    SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk 
-                    | SysTick_CTRL_CLKSOURCE_Msk;
-    HAL_NVIC_SetPriority(SysTick_IRQn, 
+    uint32_t check_error = 0U;
+
+    check_error = HAL_SYSTICK_Config(KIM_BUTTON_SYSTICK_ONE_TICK);
+    HAL_NVIC_SetPriority(SysTick_IRQn,
         KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority,
-        KIM_BUTTON_NVIC_SYSTICK_SubPriority
-    ); /* SysTick is within the core, don't need to be enabled(NVIC_Enable). */
-    uwTickPrio = (1UL << __NVIC_PRIO_BITS) - 1UL;
+        0UL /* Make sure it can promptly preempt other low-priority interrupts */
+    ); 
+    /* SysTick is within the core, don't need to be enabled(NVIC_Enable). */
+    uwTickPrio = KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority;
+
+    /* error handler */
+ #if defined(DEBUG) || defined(_DEBUG)
+    if(check_error != 0) {
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
+        while(1) {}
+    }
+ #else
+    (void)check_error;
+ #endif /* DEBUG */
 #endif /*KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK*/
 
 
@@ -255,6 +298,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     default:
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;
@@ -331,6 +375,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         /* ... error handler ... */
         the_exti_IRQ = EXTI0_IRQn;
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;
@@ -354,7 +399,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
-    struct Kim_Button_Status* const self
+    struct Kim_Button_TypeDef* const self
 )
 {
     if( ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Double
@@ -377,18 +422,16 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
  * @param[in]       double_push_callback - callback function for double push.
  * @return          None
  */
-KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
-    struct Kim_Button_Status* const self,
+KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
+    struct Kim_Button_TypeDef* const self,
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
-    const uint32_t exti_trigger_x,
+    const uint8_t Normal_Bit_Val,
     void (* short_push_callback)(void),
     void (* long_push_callback)(void),
     void (* double_push_callback)(void)
 )
 {
-    uint8_t Normal_Bit_Val = (exti_trigger_x == EXTI_TRIGGER_RISING) ? 0 : 1;
-
     /* Critical Zone Begin */
     KIM_BUTTON_CRITICAL_ZONE_BEGIN();
 
@@ -430,12 +473,15 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Wait_For_Double:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
             > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME)
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
-        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt
@@ -471,6 +517,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         /* ... error handler ... */
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 #if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
 #endif /* DEBUG */
         break;
@@ -498,7 +545,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
  *              3. If GPIO_PIN_X is invalid.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
-    struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);\
+    struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name);\
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
@@ -507,11 +554,14 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         void (*double_push_callback)(void)                                      \
     )                                                                           \
     {                                                                           \
+        static const uint8_t Normal_Bit_Val =                                   \
+            (EXTI_TRIGGER_X == EXTI_TRIGGER_RISING) ? 0 : 1;                    \
+                                                                                \
         Kim_Button_PrivateUse_AsynchronousHandler(                              \
             &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name)),              \
             GPIOx_BASE,                                                         \
             GPIO_PIN_X,                                                         \
-            EXTI_TRIGGER_X,                                                     \
+            Normal_Bit_Val,                                                     \
             short_push_callback,                                                \
             long_push_callback,                                                 \
             double_push_callback                                                \
@@ -559,7 +609,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
  * @param       __name - the name of your button. remain the same as it in `KIM_BUTTON__REGISTER`.
  */
 #define KIM_BUTTON__DECLARE(__name)                                                         \
-    extern struct Kim_Button_Status KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);     \
+    extern struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name);    \
     KIM_BUTTON_C_API void KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name)(void);
 
 
