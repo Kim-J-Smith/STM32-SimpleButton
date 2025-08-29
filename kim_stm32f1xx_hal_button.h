@@ -167,6 +167,9 @@ struct Kim_Button_Status {
     #define KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE    static inline
 #endif /* FORCE_INLINE */
 
+/* Macro for suggest inline of private-use functions */
+#define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+
 /* Macro to connect macro */
 #define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
 #define KIM_BUTTON_CONNECT_1(_a, _b)        KIM_BUTTON_CONNECT_2(_a, _b)
@@ -377,18 +380,16 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
  * @param[in]       double_push_callback - callback function for double push.
  * @return          None
  */
-KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
+KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
     struct Kim_Button_Status* const self,
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
-    const uint32_t exti_trigger_x,
+    const uint8_t Normal_Bit_Val,
     void (* short_push_callback)(void),
     void (* long_push_callback)(void),
     void (* double_push_callback)(void)
 )
 {
-    uint8_t Normal_Bit_Val = (exti_trigger_x == EXTI_TRIGGER_RISING) ? 0 : 1;
-
     /* Critical Zone Begin */
     KIM_BUTTON_CRITICAL_ZONE_BEGIN();
 
@@ -507,11 +508,14 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_AsynchronousHand
         void (*double_push_callback)(void)                                      \
     )                                                                           \
     {                                                                           \
+        static const uint8_t Normal_Bit_Val =                                   \
+            (EXTI_TRIGGER_X == EXTI_TRIGGER_RISING) ? 0 : 1;                    \
+                                                                                \
         Kim_Button_PrivateUse_AsynchronousHandler(                              \
             &(KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name)),              \
             GPIOx_BASE,                                                         \
             GPIO_PIN_X,                                                         \
-            EXTI_TRIGGER_X,                                                     \
+            Normal_Bit_Val,                                                     \
             short_push_callback,                                                \
             long_push_callback,                                                 \
             double_push_callback                                                \
