@@ -62,8 +62,8 @@
 #define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq() */} while(0U)
 
 /* define follow macro any time */
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq() } while(0U)
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq() } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq() } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq() } while(0U)
 
 /* ====================== Customization END ======================== */
 
@@ -114,11 +114,14 @@ struct Kim_Button_Status {
     /** @b [public] This member variable is used to record the long-push time. */
     uint16_t                                        public_long_push_min_time;
 
-    /** @p [private] This member variable is used to record the state of each button. */
-    volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 8;
-
     /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
     uint8_t                                         private_push_time;
+
+    /** @p [private] This member variable is used to record the state of each button. */
+    volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
+
+    /** @p [private] This member variable is used to record the state of initialization. */
+    uint8_t                                         private_is_init : 4;
 };
 
 #ifdef __cplusplus
@@ -210,6 +213,16 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     void (* method_interrupt_handler) (void)
 )
 {
+    /* Initialize only once */
+    if(self->private_is_init != 0) {
+#if defined(DEBUG) || defined(_DEBUG)
+        while(1) {}
+#endif /* DEBUG */
+        return;
+    } else {
+        self->private_is_init = 1;
+    }
+
     /* Initialize the member variables */
     self->private_push_time = 0;
 
@@ -438,13 +451,13 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     case Kim_Button_State_Wait_For_Double:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
-        KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
             > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME)
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
-        KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt

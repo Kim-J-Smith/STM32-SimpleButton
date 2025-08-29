@@ -233,8 +233,8 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 
 /* define follow macro any time */
 // 以下两个宏定义即使在单线程下也需要定义
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
@@ -429,8 +429,8 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
 
 /* define follow macro any time */
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
 /* ====================== Customization END ======================== */
 ```
