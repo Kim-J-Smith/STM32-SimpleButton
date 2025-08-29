@@ -57,8 +57,13 @@
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq() */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq() */} while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq() } while(0U)
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq() } while(0U)
 
 /* ====================== Customization END ======================== */
 
@@ -431,12 +436,15 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
         break;
     case Kim_Button_State_Wait_For_Double:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+        KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
             > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME)
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
-        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+        KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt
