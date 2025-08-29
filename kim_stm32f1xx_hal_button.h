@@ -2,7 +2,7 @@
  * @file            kim_stm32f1xx_hal_button.h
  * @author          Kim-J-Smith
  * @brief           Kim Library to offer a template for button [STM32 HAL]
- * @version         0.0.4 ( 0004L )
+ * @version         0.0.5 ( 0005L )
  *          (match with stm32f1xx_hal.h version 1.0.0)
  * @date            2025-08-26
  * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
@@ -12,7 +12,7 @@
 # include "stm32f1xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0004L
+#define     KIM_STM32F1XX_HAL_BUTTON_H  0005L
 
 /* ================================================================================ */
 /**    @b ATTENTION Kim_Button use SysTick, which conflicts with with Delay_xxx    **/

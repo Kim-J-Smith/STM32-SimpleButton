@@ -6,11 +6,11 @@
 
 ---
 
-### 新增功能特性(v0.0.4)：
+### 新增功能特性(v0.0.5)：
 
-+ ✅ **临界区优化**：多线程数据安全、不冲突
++ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
 
-+ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
++ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
 
 ### 已有功能特性：
 
@@ -31,6 +31,10 @@
 + ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码
 
 + ✅ **跨平台友好**：支持GCC与ArmCC等编译器
+
++ ✅ **临界区保护**：多线程数据安全、不冲突
+
++ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
 
 ---
 
@@ -222,8 +226,15 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone(临界区保护，多线程时必须使用) *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+// 以下两个宏定义在多线程场景下需要取消do...while内部注释
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
+
+/* define follow macro any time */
+// 以下两个宏定义即使在单线程下也需要定义
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq(); } while(0U)
 
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
@@ -413,8 +424,13 @@ Kim_Button_myButton.public_long_push_min_time = 3000;
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /***** Critical Zone *****/
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            /* __disable_irq() */
-#define KIM_BUTTON_CRITICAL_ZONE_END()              /* __enable_irq() */
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_BEGIN()  do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_DANGEROUS_CRITICAL_ZONE_END()    do { __enable_irq(); } while(0U)
 
 /* ====================== Customization END ======================== */
 ```
