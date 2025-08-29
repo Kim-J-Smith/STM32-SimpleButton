@@ -124,14 +124,14 @@ struct Kim_Button_TypeDef {
     /** @b [public] This member variable is used to record the double push max time. */
     uint16_t                                        public_double_push_max_time;
 
-    /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
-    uint8_t                                         private_push_time;
-
     /** @p [private] This member variable is used to record the state of each button. */
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
 
+    /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
+    uint8_t                                         private_push_time : 3;
+
     /** @p [private] This member variable is used to record the state of initialization. */
-    uint8_t                                         private_is_init : 4;
+    uint8_t                                         private_is_init : 1;
 };
 
 #ifdef __cplusplus
