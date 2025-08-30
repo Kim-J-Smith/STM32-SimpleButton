@@ -10,6 +10,7 @@
  */
 # include <stdint.h>
 # include "stm32f1xx_hal.h"
+// # include "stm32f4xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
 #define     KIM_STM32F1XX_HAL_BUTTON_H  0007L
@@ -327,10 +328,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #elif defined(__HAL_RCC_SYSCFG_CLK_ENABLE)
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 #else
- #if defined(DEBUG) || defined(_DEBUG)
-    KIM_BUTTON_DEBUG_ERROR_HOOK();
-    while(1) {}
- #endif /* DEBUG */
+ #warning Cannot find macro for AFIO or SYSCFG !
 #endif /* AFIO or SYSCFG */
 
     /* Initialize the GPIOx Clock */
