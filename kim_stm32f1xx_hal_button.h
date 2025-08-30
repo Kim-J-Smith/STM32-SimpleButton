@@ -320,8 +320,18 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
 
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI == 0)
-    /* Initialize the AFIO Clock */
+
+    /* Initialize the AFIO Clock(F1xx) or SYSCFG Clock */
+#if defined(__HAL_RCC_AFIO_CLK_ENABLE)
     __HAL_RCC_AFIO_CLK_ENABLE();
+#elif defined(__HAL_RCC_SYSCFG_CLK_ENABLE)
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+#else
+ #if defined(DEBUG) || defined(_DEBUG)
+    KIM_BUTTON_DEBUG_ERROR_HOOK();
+    while(1) {}
+ #endif /* DEBUG */
+#endif /* AFIO or SYSCFG */
 
     /* Initialize the GPIOx Clock */
     switch (gpiox_base) {
