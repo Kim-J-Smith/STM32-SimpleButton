@@ -6,11 +6,9 @@
 
 ---
 
-### 新增功能特性(v0.1.0)：
+### 新增功能特性(v0.1.1)：
 
-+ ✅ **新增按键单独设置冷却时间**：每个按键单独设置按键冷却时间，灵活性更高
-
-+ ✅ **新增按键单独设置双击判定时间**：可以为每个按键设置双击判定时间，灵活度更高
++ ✅ **更加精简**：新增设置选项可以降低大量使用按键时的RAM占用
 
 ### 已有功能特性：
 
@@ -41,6 +39,8 @@
 + ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
 
 + ✅ **异步处理**：在重循环负载情况下，外部中断触发保证按键请求不会被忽略
+
++ ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
 ---
 
@@ -221,6 +221,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 
 // 按键功能执行完毕后的冷却时间
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+// 如果这个宏是1，那么上面的TIME不能为每个按钮单独配置（但更节省RAM）
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config(NVIC 中断优先级配置) *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick 抢占优先级
@@ -451,6 +455,9 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 // CD time for button
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick PreemptionPriority
