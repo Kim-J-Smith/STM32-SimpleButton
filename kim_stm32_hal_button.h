@@ -1,20 +1,34 @@
 /**
- * @file            kim_stm32f1xx_hal_button.h
+ * @file            kim_stm32_hal_button.h
+ * 
  * @author          Kim-J-Smith
+ * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
- * @version         0.1.0 ( 0006L )
- *          (match with stm32f1xx_hal.h version 1.0.0)
+ * 
+ * @version         0.1.1 ( 0007L )
+ *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
+ * 
  * @date            2025-08-26
- * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
- *          Refer to the LICENCE in root for more details.
+ * 
+ * @attention       Copyright (c) 2025 Kim-J-Smith.
+ *                  All rights reserved.
+ * 
+ * @copyright       This project complies with the MIT License.
+ *                  Refer to the LICENCE in root for more details.
  */
 # include <stdint.h>
-# include "stm32f1xx_hal.h"
 
-#ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0006L
+#ifndef     KIM_STM32_HAL_BUTTON_H
+#define     KIM_STM32_HAL_BUTTON_H      0007L
 
 /* ============ Users can customize these by themselves ============ */
+
+/***** @headerfile Select one of the header files given below as needed *****/
+# include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
+// # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -27,6 +41,9 @@
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
@@ -115,6 +132,8 @@ struct Kim_Button_TypeDef {
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
     void (* method_interrupt_handler) (void);
 
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+
     /** @b [public] This member variable is used to record the long-push time. */
     uint16_t                                        public_long_push_min_time;
 
@@ -123,6 +142,8 @@ struct Kim_Button_TypeDef {
 
     /** @b [public] This member variable is used to record the double push max time. */
     uint16_t                                        public_double_push_max_time;
+
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
 
     /** @p [private] This member variable is used to record the state of each button. */
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
@@ -147,13 +168,41 @@ struct Kim_Button_TypeDef {
     || (EXTI_TRIGGER_X == EXTI_TRIGGER_NONE) ) ? -1 : 1)
 
 /* Macro for judge GPIOx_BASE and GPIO_PIN_X */
+#if defined(GPIOF_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE)    ((GPIOx_BASE) == GPIOF_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_F */
+
+#if defined(GPIOG_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE)    ((GPIOx_BASE) == GPIOG_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_G */
+
+#if defined(GPIOH_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE)    ((GPIOx_BASE) == GPIOH_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_H */
+
+#if defined(GPIOI_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    ((GPIOx_BASE) == GPIOI_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_I */
+
 #define KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, PIN)      \
     ( ((                                                \
         (GPIOx_BASE) == GPIOA_BASE ||                   \
         (GPIOx_BASE) == GPIOB_BASE ||                   \
         (GPIOx_BASE) == GPIOC_BASE ||                   \
         (GPIOx_BASE) == GPIOD_BASE ||                   \
-        (GPIOx_BASE) == GPIOE_BASE                      \
+        (GPIOx_BASE) == GPIOE_BASE ||                   \
+        KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)         \
     ) && (                                              \
         (PIN) == GPIO_PIN_0 || (PIN) == GPIO_PIN_1 ||   \
         (PIN) == GPIO_PIN_2 || (PIN) == GPIO_PIN_3 ||   \
@@ -250,9 +299,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     KIM_BUTTON_CRITICAL_ZONE_END();
 
     /* public variables */
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
     self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
     self->public_cool_down_time = KIM_BUTTON_COOL_DOWN_TIME;
     self->public_double_push_max_time = KIM_BUTTON_DOUBLE_PUSH_MAX_TIME;
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
 
     /* Initialize the public method */
     self->method_asynchronous_handler = method_asynchronous_handler;
@@ -283,8 +334,15 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
 
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI == 0)
-    /* Initialize the AFIO Clock */
+
+    /* Initialize the AFIO Clock(F1xx) or SYSCFG Clock */
+#if defined(__HAL_RCC_AFIO_CLK_ENABLE)
     __HAL_RCC_AFIO_CLK_ENABLE();
+#elif defined(__HAL_RCC_SYSCFG_CLK_ENABLE)
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+#else
+ #warning Cannot find macro for AFIO or SYSCFG !
+#endif /* AFIO or SYSCFG */
 
     /* Initialize the GPIOx Clock */
     switch (gpiox_base) {
@@ -480,7 +538,12 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
-            > (uint32_t)self->public_double_push_max_time)
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+            > (uint32_t)self->public_double_push_max_time
+#else
+            > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+        )
         {
             self->private_state = Kim_Button_State_Single_Push;
         }
@@ -490,7 +553,12 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         break;
     case Kim_Button_State_Single_Push:
         if(HAL_GetTick() - self->private_time_stamp_interrupt
-            > (uint32_t)self->public_long_push_min_time)
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+            > (uint32_t)self->public_long_push_min_time
+#else
+            > KIM_BUTTON_LONG_PUSH_MIN_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+        )
         {
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
@@ -521,7 +589,12 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         break;
     case Kim_Button_State_Cool_Down:
         if(HAL_GetTick() - self->private_time_stamp_loop 
-            > (uint32_t)self->public_cool_down_time)
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+            > (uint32_t)self->public_cool_down_time
+#else
+            > KIM_BUTTON_COOL_DOWN_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+        )
         {
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
         }
@@ -628,4 +701,4 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     KIM_BUTTON_C_API void KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name)(void);
 
 
-#endif /* KIM_STM32F1XX_HAL_BUTTON_H */
+#endif /* KIM_STM32_HAL_BUTTON_H */
