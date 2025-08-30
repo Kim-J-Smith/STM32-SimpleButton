@@ -6,7 +6,7 @@
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
  * @version         0.1.1 ( 0007L )
- *                  (match with stm32f1xx_hal.h or stm32f4xx_hal.h)
+ *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
  * 
@@ -17,16 +17,18 @@
  *                  Refer to the LICENCE in root for more details.
  */
 # include <stdint.h>
+
+#ifndef     KIM_STM32_HAL_BUTTON_H
+#define     KIM_STM32_HAL_BUTTON_H      0007L
+
+/* ============ Users can customize these by themselves ============ */
+
+/***** Select one of the header files given below as needed *****/
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
 // # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
-
-#ifndef     KIM_STM32F1XX_HAL_BUTTON_H
-#define     KIM_STM32F1XX_HAL_BUTTON_H  0007L
-
-/* ============ Users can customize these by themselves ============ */
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -699,4 +701,4 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     KIM_BUTTON_C_API void KIM_BUTTON_CONNECT3(KIM_BUTTON_NAME_PREFIX, Init_, __name)(void);
 
 
-#endif /* KIM_STM32F1XX_HAL_BUTTON_H */
+#endif /* KIM_STM32_HAL_BUTTON_H */
