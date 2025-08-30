@@ -46,6 +46,8 @@
 
 ### [Chinese]:
 
+![kim_button](.\picture\kim_button.png)
+
 #### 简介：
 
 * 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
