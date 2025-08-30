@@ -1,16 +1,27 @@
 /**
- * @file            kim_stm32f1xx_hal_button.h
+ * @file            kim_stm32_hal_button.h
+ * 
  * @author          Kim-J-Smith
+ * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
+ * 
  * @version         0.1.1 ( 0007L )
- *          (match with stm32f1xx_hal.h version 1.0.0)
+ *                  (match with stm32f1xx_hal.h or stm32f4xx_hal.h)
+ * 
  * @date            2025-08-26
- * @copyright       Copyright (c) 2025 Kim-J-Smith under MIT License.
- *          Refer to the LICENCE in root for more details.
+ * 
+ * @attention       Copyright (c) 2025 Kim-J-Smith.
+ *                  All rights reserved.
+ * 
+ * @copyright       This project complies with the MIT License.
+ *                  Refer to the LICENCE in root for more details.
  */
 # include <stdint.h>
 # include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
 
 #ifndef     KIM_STM32F1XX_HAL_BUTTON_H
 #define     KIM_STM32F1XX_HAL_BUTTON_H  0007L
