@@ -48,7 +48,7 @@
 
 #### 简介：
 
-* 本项目仅含**一个**文件，即 `kim_stm32f1xx_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
+* 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
   
 
@@ -56,23 +56,23 @@
 
 * 首先，假设我们有三个文件（`main.c` , `my_button.c` , `my_button.h` ）。其中，my_button.c 文件存放按键代码，my_button.h 文件存放必要的声明，main.c 调用代码。
 
-* 然后，在 `my_button.c` 中，先引入头文件`kim_stm32f1xx_hal_button.h`，使用 **KIM_BUTTON__REGISTER** 宏 来生成所需要的代码。（示例如下： 我的按钮触发时会在 **PA7** 产升**下降沿** 信号， 我想给按钮取名为**myButton**  ）
+* 然后，在 `my_button.c` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__REGISTER** 宏 来生成所需要的代码。（示例如下： 我的按钮触发时会在 **PA7** 产升**下降沿** 信号， 我想给按钮取名为**myButton**  ）
 
 ```c
 /* 以下是 my_button.c 内容 */
-#include "kim_stm32f1xx_hal_button.h" // 包含头文件
+#include "kim_stm32_hal_button.h" // 包含头文件
 
 // 依次为            端口基地址    引脚编号       触发边沿选择       按键名称 
 KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // 注意不用加 ;
 
 ```
 
-* 接着，在 `my_button.h` 中，先引入头文件`kim_stm32f1xx_hal_button.h`，使用 **KIM_BUTTON__DECLARE** 宏 来生成必要的声明信息。（注意： 声明的按钮名称必须是 **KIM_BUTTON__REGISTER** 宏 定义过的）
+* 接着，在 `my_button.h` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__DECLARE** 宏 来生成必要的声明信息。（注意： 声明的按钮名称必须是 **KIM_BUTTON__REGISTER** 宏 定义过的）
 
 ```c
 /* 以下是 my_button.h 内容 */
 #pragma once
-#include "kim_stm32f1xx_hal_button.h" // 包含头文件
+#include "kim_stm32_hal_button.h" // 包含头文件
 
 // 按钮名称必须与 my_button.c 中保持一致
 KIM_BUTTON__DECLARE(myButton) // 注意不用加 ;
@@ -196,10 +196,18 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 
 #### 自定义选项（宏）：
 
-* 在`kim_stm32f1xx_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。
+* 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。
 
 ```c
 /* ============ Users can customize these by themselves(自定义选项开始) ============ */
+
+/***** Select one of the header files given below as needed *****/
+// 根据芯片型号选择合适的头文件。
+# include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
+// # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
 
 /***** time config(配置各种时间) *****/
 /* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
@@ -283,7 +291,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 
 #### Brief introduction:
 
-* This project contains only one file, namely `kim_stm32f1xx_hal_button.h` . All the required code can be generated simply by using one macro definition.
+* This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
   
 
@@ -291,11 +299,11 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 
 * First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the key codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
 
-* Then, in `my_button.c`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
+* Then, in `my_button.c`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
   
   ```c
   /* The following is the content of my_button.c */ 
-  #include "kim_stm32f1xx_hal_button.h" // Include header files
+  #include "kim_stm32_hal_button.h" // Include header files
   
   // The sequence is port base address, pin number, trigger edge selection, and key name(up to you)
   KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // Note: No need to add ;
@@ -303,12 +311,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
   
   
 
-* Next, in `my_button.h`, first import the header file `kim_stm32f1xx_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
+* Next, in `my_button.h`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
   
   ```c
   /* The following is the content of my_button.h */ 
   #pragma once 
-  #include "kim_stm32f1xx_hal_button.h" // Include header files
+  #include "kim_stm32_hal_button.h" // Include header files
   
   // The button name must be consistent with that in my_button.c
   KIM_BUTTON__DECLARE(myButton) // Note: No need to add ;
@@ -430,10 +438,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 #### Customizable options (Macro):
 
-* At the beginning of the `kim_stm32f1xx_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements.
+* At the beginning of the `kim_stm32_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements.
 
 ```c
 /* ============ Users can customize these by themselves ============ */
+
+
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */

@@ -23,7 +23,7 @@
 
 /* ============ Users can customize these by themselves ============ */
 
-/***** Select one of the header files given below as needed *****/
+/***** @headerfile Select one of the header files given below as needed *****/
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
 // # include "stm32f3xx_hal.h"
