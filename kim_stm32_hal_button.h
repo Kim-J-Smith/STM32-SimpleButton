@@ -235,7 +235,18 @@ struct Kim_Button_TypeDef {
 #endif /* FORCE_INLINE */
 
 /* Macro for suggest inline of private-use functions */
-#define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+#if !(defined(DEBUG) || defined(_DEBUG))
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+#else
+ #if defined(__GNUC__)
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline)) \
+                                                        __attribute__((optimize("O1")))
+ #elif defined(__CC_ARM)
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline))
+ #else
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static 
+ #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
+#endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
 
 /* Macro for debug */
 #if KIM_BUTTON_USE_DEBUG_MODE != 0
