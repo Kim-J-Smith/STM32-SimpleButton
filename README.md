@@ -6,9 +6,10 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 ---
 
-### 新增功能特性(v0.1.2):
+### 新增功能特性(v0.1.3):
 
-+ ✅ **调试便捷**：新增单独调试模式设置选项（宏）
++ ✅ **新增按键组合功能**：可在[选项](#自定义选项宏)中开启
++ ✅ **新增长按计时功能**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启
 
 ### 已有功能特性：
 
@@ -32,7 +33,7 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
-+ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
++ ✅ **调试模式**：增加调试期生效死循环(需在自定义选项启动调试模式)，精准锁定异常
 
 + ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
 
@@ -304,6 +305,16 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
+/***** Macro to enable different long push time *****/
+// 当宏设置为 1 时，长按回调函数会传入一个 uint32_t 类型的参数，记录着长按的tick数
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
+/***** Macro to enable button combination *****/
+// 当宏设置为 1 时，支持按键组合
+// 需要使用 Kim_Button_name.public_comb_before_button = &(先按下的按键); 绑定先按下的按键
+// 与 Kim_Button_name.public_comb_callback = callback_func; 绑定回调函数
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
@@ -540,6 +551,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
+/***** Macro to enable different long push time *****/
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
+/***** Macro to enable button combination *****/
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /* ====================== Customization END ======================== */
 ```

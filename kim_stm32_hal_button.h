@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.2 ( 0008L )
+ * @version         0.1.3 ( 0009L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0008L
+#define     KIM_STM32_HAL_BUTTON_H      0009L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -90,7 +90,7 @@
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
 /***** Macro to enable button combination *****/
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        1
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /* ====================== Customization END ======================== */
 
@@ -735,6 +735,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         if(HAL_GetTick() - self->private_time_stamp_loop 
             > KIM_BUTTON_RELEASE_DELAY_TIME)
         {
+            /* check again */
             if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
             {
                 self->private_push_time = 0;
