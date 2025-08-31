@@ -62,7 +62,7 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 ## Chinese <span id="chinese"> </span>
 
-![kim_button](.\picture\kim_button.png)
+![kim_button](./picture/kim_button.png)
 
 #### 简介：
 
