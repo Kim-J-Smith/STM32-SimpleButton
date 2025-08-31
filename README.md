@@ -1,14 +1,14 @@
 # STM32-SimpleButton
 
-[Chinese] :  一个非常精简的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，非阻塞。
+Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
 
-[English] : A very tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
+一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，采用外部中断加循环内异步处理，非阻塞状态机。
 
 ---
 
-### 新增功能特性(v0.1.1)：
+### 新增功能特性(v0.1.2):
 
-+ ✅ **更加精简**：新增设置选项可以降低大量使用按键时的RAM占用
++ ✅ **调试便捷**：新增单独调试模式设置选项（宏）
 
 ### 已有功能特性：
 
@@ -38,13 +38,31 @@
 
 + ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
 
-+ ✅ **异步处理**：在重循环负载情况下，外部中断触发保证按键请求不会被忽略
++ ✅ **异步处理**：在重循环负载(异步处理函数调用间隔为50ms)情况下，外部中断触发保证按键请求不会被忽略
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
 ---
 
-### [Chinese]:
+- [中文](#chinese)
+  
+  - [简介](#简介)
+  - [使用方法](#使用方法)
+  - [动态设置](#动态设置)
+  - [注意事项](#注意事项)
+  - [自定义选项（宏）](#自定义选项宏)
+
+- [English](#english)
+  
+  - [brief-introduction](#brief-introduction)
+  - [how-to-use](#how-to-use)
+  - [dynamic-settings](#dynamic-settings)
+  - [note-attention](#note)
+  - [customizable-options-macro](#customizable-options-macro)
+
+## Chinese <span id="chinese"> </span>
+
+![kim_button](./picture/kim_button.png)
 
 #### 简介：
 
@@ -201,7 +219,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 ```c
 /* ============ Users can customize these by themselves(自定义选项开始) ============ */
 
-/***** Select one of the header files given below as needed *****/
+/***** @headerfile Select one of the header files given below as needed *****/
 // 根据芯片型号选择合适的头文件。
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
@@ -282,12 +300,18 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // DEBUG模式下，发生异常会调用的内容，需用户自行填写
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+// 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
+- [返回顶部](#stm32-simplebutton)
+  
+  
 
-
-### [English]:
+## English <span id="english"> </span>
 
 #### Brief introduction:
 
@@ -398,7 +422,7 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 
 
 
-#### Dynamic set:
+#### Dynamic settings:
 
 * You can set an independent long-press determination time for each key in the code. An example is as follows:
 
@@ -443,7 +467,13 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 ```c
 /* ============ Users can customize these by themselves ============ */
 
-
+/***** @headerfile Select one of the header files given below as needed *****/
+# include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
+// # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
+// # include "stm32h7xx_hal.h"
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -508,5 +538,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // In DEBUG mode, the content that will be called in case of an exception needs to be filled in by the user themselves
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
 /* ====================== Customization END ======================== */
 ```
+
+- [Top](#stm32-simplebutton)

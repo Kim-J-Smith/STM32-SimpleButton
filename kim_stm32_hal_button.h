@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.1 ( 0007L )
+ * @version         0.1.2 ( 0008L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0007L
+#define     KIM_STM32_HAL_BUTTON_H      0008L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -29,6 +29,7 @@
 // # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
+// # include "stm32h7xx_hal.h"
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -81,6 +82,9 @@
 /***** Macro for debug mode *****/
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... can be your function ... */
+
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
 /* ====================== Customization END ======================== */
 
@@ -192,6 +196,18 @@ struct Kim_Button_TypeDef {
  #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    (0)
 #endif /* KIM_BUTTON_JUDGE_GPIO_PIN_I */
 
+#if defined(GPIOJ_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    ((GPIOx_BASE) == GPIOJ_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_J */
+
+#if defined(GPIOK_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    ((GPIOx_BASE) == GPIOK_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_K */
+
 #define KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, PIN)      \
     ( ((                                                \
         (GPIOx_BASE) == GPIOA_BASE ||                   \
@@ -202,7 +218,9 @@ struct Kim_Button_TypeDef {
         KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE) ||      \
         KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE) ||      \
         KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE) ||      \
-        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)         \
+        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)         \
     ) && (                                              \
         (PIN) == GPIO_PIN_0 || (PIN) == GPIO_PIN_1 ||   \
         (PIN) == GPIO_PIN_2 || (PIN) == GPIO_PIN_3 ||   \
@@ -235,7 +253,22 @@ struct Kim_Button_TypeDef {
 #endif /* FORCE_INLINE */
 
 /* Macro for suggest inline of private-use functions */
-#define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+#if !(defined(DEBUG) || defined(_DEBUG))
+ #if KIM_BUTTON_NO_INLINE_STATE_MACHINE == 0
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+ #else
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static
+ #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
+#else
+ #if defined(__GNUC__)
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline)) \
+                                                        __attribute__((optimize("O1")))
+ #elif defined(__CC_ARM)
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline))
+ #else
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static 
+ #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
+#endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
 
 /* Macro for debug */
 #if KIM_BUTTON_USE_DEBUG_MODE != 0
