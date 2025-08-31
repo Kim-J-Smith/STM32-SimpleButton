@@ -89,6 +89,9 @@
 /***** Macro to enable different long push time *****/
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
+/***** Macro to enable button combination *****/
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        1
+
 /* ====================== Customization END ======================== */
 
 
@@ -114,6 +117,10 @@ enum Kim_Button_State {
     Kim_Button_State_Release_Delay,
 
     Kim_Button_State_Cool_Down,
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+    Kim_Button_State_Combination_Push,
+#endif /* KIM_BUTTON_ENABLE_BUTTON_COMBINATION */
 };
 
 #ifndef ENUM_BITFIELD
@@ -130,6 +137,10 @@ typedef void (*Kim_Button_ShortPushCallBack_t)(void);
 #endif /* different long push time */
 
 typedef void (*Kim_Button_DoublePushCallBack_t)(void);
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+    typedef void (*Kim_Button_CombinationCallBack_t)(void);
+#endif /* button combination */
 
 /* This struct is for status and behaviour of each button. */
 struct Kim_Button_TypeDef {
@@ -148,6 +159,18 @@ struct Kim_Button_TypeDef {
 
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
     void (* method_interrupt_handler) (void);
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    /** @b [public] Record the combination [before] button pointer. */
+    struct Kim_Button_TypeDef* public_comb_before_button;
+
+    /** @b [public] Record the combination button callback function.
+     * (This callback function will be called when button-[This] is released 
+     * and button-[before] is in the pressed state.) */
+    Kim_Button_CombinationCallBack_t public_comb_callback;
+
+#endif /* button combination */
 
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
 
@@ -354,6 +377,14 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     /* Initialize the public method */
     self->method_asynchronous_handler = method_asynchronous_handler;
     self->method_interrupt_handler = method_interrupt_handler;
+
+    /* combination button */
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    self->public_comb_before_button = 0;
+    self->public_comb_callback = 0;
+
+#endif /* combination button */
 
     /* SysTick configure */
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK == 0)
@@ -636,6 +667,20 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                 self->private_time_stamp_loop = HAL_GetTick();
                 self->private_state = (self->private_push_time == 1)
                     ? Kim_Button_State_Wait_For_Double : Kim_Button_State_Double_Push;
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+                if(self->public_comb_before_button == 0 || self->public_comb_callback == 0)
+                {
+                    break;
+                }
+                if(self->public_comb_before_button->private_state 
+                    != Kim_Button_State_Wait_For_End)
+                {
+                    break;
+                }
+                self->private_state = Kim_Button_State_Combination_Push;
+#endif /* combination button */
+
             } else {
                 self->private_state = Kim_Button_State_Wait_For_End;
             }
@@ -653,6 +698,22 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
         }
         break;
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    case Kim_Button_State_Combination_Push:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+        KIM_BUTTON_SAFE_CALLBACK(self->public_comb_callback);
+
+        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+        self->private_push_time = 0;
+        self->private_time_stamp_loop = HAL_GetTick();
+        self->private_state = Kim_Button_State_Cool_Down;
+        break;
+
+#endif /* button combination */
+
     default:
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
