@@ -6,9 +6,10 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 ---
 
-### 新增功能特性(v0.1.2):
+### 新增功能特性(v0.1.3):
 
-+ ✅ **调试便捷**：新增单独调试模式设置选项（宏）
++ ✅ **新增按键组合功能**：可在[选项](#自定义选项宏)中开启，[示例](#combination_button_example)
++ ✅ **新增长按计时功能**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启，[示例](#long_push_timing_example)
 
 ### 已有功能特性：
 
@@ -32,7 +33,7 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
-+ ✅ **调试模式**：增加调试期生效死循环(需定义宏DEBUG)，精准锁定异常
++ ✅ **调试模式**：增加调试期生效死循环(需在自定义选项启动调试模式)，精准锁定异常
 
 + ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
 
@@ -130,8 +131,8 @@ int main(void)
         //     补充： （Kim_Button_ 加上 按钮名称） 这个结构体是全局变量，我们通过它调用函数。
         //     如果不需要某个回调函数，可以传入NULL。
         Kim_Button_myButton.method_asynchronous_handler(
-            short_push_callback， // 如果不需要，可以填NULL
-            long_push_callback，  // 如果不需要，可以填NULL
+            short_push_callback, // 如果不需要，可以填NULL
+            long_push_callback,  // 如果不需要，可以填NULL
             double_push_callback  // 如果不需要，可以填NULL
         );
 
@@ -169,6 +170,105 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
      /* ... 其他无关代码 ... */
 }
 ```
+
+* 【可选功能】计时长按 <span id="long_push_timing_example"> </span>
+
+```c
+/***** Macro to enable different long push time *****/
+// 找到这个宏，将它的值修改为 1
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
+
+// 准备好带 uint32_t 参数的长按回调函数（名字随意）
+// 该参数会接受实际的按键按下的时间(存在误差，与一轮while循环用时相近)
+void long_push_callback(uint32_t long_push_tick)
+{
+    if(long_push_tick < 3000) {
+        /* 1~3 s */
+    }
+    else if(long_push_tick < 10000) {
+        /* 3~10 s */
+    }
+    else {
+        /* > 10 s */
+    }
+}
+
+int main(void)
+{
+    /* ... */
+    Kim_Button_Init_myButton(); // 与一般情况一致
+
+    while(1)
+    {
+        Kim_Button_myButton.method_asynchronous_handler(
+            ...， // 与一般情况一致
+            long_push_callback,  // 如果不需要，可以填NULL
+            ...  // 与一般情况一致
+        );
+    }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+     /* ... 其他无关代码 ... */
+    if(GPIO_Pin == GPIO_PIN_7) 
+    {
+        // 与一般情况一致
+        Kim_Button_myButton.method_interrupt_handler();
+    }
+     /* ... 其他无关代码 ... */
+}
+```
+
+* 【可选功能】组合按键 <span id="combination_button_example"> </span>
+
+```c
+/***** Macro to enable button combination *****/
+// 找到这个宏，将它的值修改为 1
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
+// 组合键回调函数（名称随意，但必须无参无返回值）
+void CombinationCallBack(void)
+{
+    /* ... */
+}
+
+int main(void)
+{
+    Kim_Button_Init_KEY1();
+    Kim_Button_Init_KEY2();
+
+    // 假设我要设置组合键：在KEY1按下期间，KEY2按下并释放后会调用 CombinationCallBack
+    // 以下配置必须在初始化函数之后
+    Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // KEY2的前置按键是KEY1
+    Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
+
+    while(1)
+    {
+        Kim_Button_KEY1.method_asynchronous_handler(...);// 与一般情况一致
+        Kim_Button_KEY2.method_asynchronous_handler(...);// 与一般情况一致
+    }
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+     /* ... 其他无关代码 ... */
+    if(...) 
+    {
+        // 与一般情况一致
+        Kim_Button_KEY1.method_interrupt_handler();
+    }
+    else if(...)
+    {
+        // 与一般情况一致
+        Kim_Button_KEY2.method_interrupt_handler();
+    }
+     /* ... 其他无关代码 ... */
+}
+```
+
+
 
 
 
@@ -304,6 +404,16 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
+/***** Macro to enable different long push time *****/
+// 当宏设置为 1 时，长按回调函数会传入一个 uint32_t 类型的参数，记录着长按的tick数
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
+/***** Macro to enable button combination *****/
+// 当宏设置为 1 时，支持按键组合
+// 需要使用 Kim_Button_name.public_comb_before_button = &(先按下的按键); 绑定先按下的按键
+// 与 Kim_Button_name.public_comb_callback = callback_func; 绑定回调函数
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
@@ -417,6 +527,103 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
       __HAL_GPIO_EXTI_CLEAR_IT();
   }
    /* ... Other irrelevant code ... */
+}
+```
+
+* **[optional function]** Long press for timing
+
+```c
+/***** Macro to enable different long push time *****/
+// Find this macro and modify its value to 1
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
+
+// Prepare the long-press callback function with the uint32_t parameter (the name is arbitrary)
+// This parameter will accept the actual time when the key is pressed (with an error, similar to the time taken for one while loop).
+void long_push_callback(uint32_t long_push_tick)
+{
+    if(long_push_tick < 3000) {
+        /* 1~3 s */
+    }
+    else if(long_push_tick < 10000) {
+        /* 3~10 s */
+    }
+    else {
+        /* > 10 s */
+    }
+}
+
+int main(void)
+{
+    /* ... */
+    Kim_Button_Init_myButton(); // Consistent with the general situation
+
+    while(1)
+    {
+        Kim_Button_myButton.method_asynchronous_handler(
+            ..., // Consistent with the general situation
+            long_push_callback,  // If not needed, NULL can be filled in
+            ...  // Consistent with the general situation
+        );
+    }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+     /* ... Other irrelevant code ... */
+    if(GPIO_Pin == GPIO_PIN_7) 
+    {
+        // Consistent with the general situation
+        Kim_Button_myButton.method_interrupt_handler();
+    }
+     /* ... Other irrelevant code ... */
+}
+```
+
+* **[optional function]** button combination
+
+```c
+/***** Macro to enable button combination *****/
+// Find this macro and modify its value to 1
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
+// Composite key callback function (name is arbitrary, but must have no parameters and no return value)
+void CombinationCallBack(void)
+{
+    /* ... */
+}
+
+int main(void)
+{
+    Kim_Button_Init_KEY1();
+    Kim_Button_Init_KEY2();
+
+    // Suppose I want to set the combination key: during the period when KEY1 is pressed, the combination callback will be called after KEY2 is pressed and released
+    // The following configuration must be after the initialization function
+    Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // The front button of KEY2 is KEY1
+    Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
+
+    while(1)
+    {
+        Kim_Button_KEY1.method_asynchronous_handler(...);// Consistent with the general situation
+        Kim_Button_KEY2.method_asynchronous_handler(...);// Consistent with the general situation
+    }
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+     /* ... Other irrelevant code ... */
+    if(...) 
+    {
+        // Consistent with the general situation
+        Kim_Button_KEY1.method_interrupt_handler();
+    }
+    else if(...)
+    {
+        // Consistent with the general situation
+        Kim_Button_KEY2.method_interrupt_handler();
+    }
+     /* ... Other irrelevant code ... */
 }
 ```
 
@@ -540,6 +747,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
+/***** Macro to enable different long push time *****/
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
+/***** Macro to enable button combination *****/
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /* ====================== Customization END ======================== */
 ```

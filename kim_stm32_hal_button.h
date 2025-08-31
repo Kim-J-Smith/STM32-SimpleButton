@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.2 ( 0008L )
+ * @version         0.1.3 ( 0009L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0008L
+#define     KIM_STM32_HAL_BUTTON_H      0009L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -86,6 +86,12 @@
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
+/***** Macro to enable different long push time *****/
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
+/***** Macro to enable button combination *****/
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
 /* ====================== Customization END ======================== */
 
 
@@ -111,12 +117,36 @@ enum Kim_Button_State {
     Kim_Button_State_Release_Delay,
 
     Kim_Button_State_Cool_Down,
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    Kim_Button_State_Combination_Push,
+
+    Kim_Button_State_Combination_WaitForEnd,
+
+    Kim_Button_State_Combination_Release,
+
+#endif /* KIM_BUTTON_ENABLE_BUTTON_COMBINATION */
 };
 
 #ifndef ENUM_BITFIELD
     /* Used in struct bit field */
     #define ENUM_BITFIELD(type)     unsigned int 
 #endif /* ENUM_BITFIELD */
+
+typedef void (*Kim_Button_ShortPushCallBack_t)(void);
+
+#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
+    typedef void (*Kim_Button_LongPushCallBack_t)(void);
+#else
+    typedef void (*Kim_Button_LongPushCallBack_t)(uint32_t long_push_tick);
+#endif /* different long push time */
+
+typedef void (*Kim_Button_DoublePushCallBack_t)(void);
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+    typedef void (*Kim_Button_CombinationCallBack_t)(void);
+#endif /* button combination */
 
 /* This struct is for status and behaviour of each button. */
 struct Kim_Button_TypeDef {
@@ -128,13 +158,25 @@ struct Kim_Button_TypeDef {
 
     /** @b [public] Method for asynchronous handler. Use this method in while loop. */
     void (* method_asynchronous_handler) (
-        void (*short_push_callback)(void),
-        void (*long_push_callback)(void),
-        void (*double_push_callback)(void)
+        Kim_Button_ShortPushCallBack_t short_push_callback,
+        Kim_Button_LongPushCallBack_t long_push_callback,
+        Kim_Button_DoublePushCallBack_t double_push_callback
     );
 
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
     void (* method_interrupt_handler) (void);
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    /** @b [public] Record the combination [before] button pointer. */
+    struct Kim_Button_TypeDef* public_comb_before_button;
+
+    /** @b [public] Record the combination button callback function.
+     * (This callback function will be called when button-[This] is released 
+     * and button-[before] is in the pressed state.) */
+    Kim_Button_CombinationCallBack_t public_comb_callback;
+
+#endif /* button combination */
 
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
 
@@ -303,9 +345,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     const uint16_t gpio_pin_x,
     const uint32_t exti_trigger_x,
     void (* method_asynchronous_handler) (
-        void (*short_push_callback)(void),
-        void (*long_push_callback)(void),
-        void (*double_push_callback)(void)
+        Kim_Button_ShortPushCallBack_t short_push_callback,
+        Kim_Button_LongPushCallBack_t long_push_callback,
+        Kim_Button_DoublePushCallBack_t double_push_callback
     ),
     void (* method_interrupt_handler) (void)
 )
@@ -341,6 +383,14 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     /* Initialize the public method */
     self->method_asynchronous_handler = method_asynchronous_handler;
     self->method_interrupt_handler = method_interrupt_handler;
+
+    /* combination button */
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    self->public_comb_before_button = 0;
+    self->public_comb_callback = 0;
+
+#endif /* combination button */
 
     /* SysTick configure */
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK == 0)
@@ -526,9 +576,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
     const uint8_t Normal_Bit_Val,
-    void (* short_push_callback)(void),
-    void (* long_push_callback)(void),
-    void (* double_push_callback)(void)
+    Kim_Button_ShortPushCallBack_t short_push_callback,
+    Kim_Button_LongPushCallBack_t long_push_callback,
+    Kim_Button_DoublePushCallBack_t double_push_callback
 )
 {
     /* Critical Zone Begin */
@@ -592,9 +642,17 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             > KIM_BUTTON_LONG_PUSH_MIN_TIME
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
         )
-        {
+        { 
+#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
+#else
+            uint32_t long_push_tick = HAL_GetTick() - self->private_time_stamp_interrupt;
+            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+            if(long_push_callback != ((void*)0)) {
+                long_push_callback(long_push_tick); 
+            }
+#endif /* different long push time */
         } else {
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(short_push_callback);
@@ -615,6 +673,26 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                 self->private_time_stamp_loop = HAL_GetTick();
                 self->private_state = (self->private_push_time == 1)
                     ? Kim_Button_State_Wait_For_Double : Kim_Button_State_Double_Push;
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+                if(self->public_comb_before_button == 0 || self->public_comb_callback == 0)
+                {
+                    break;
+                }
+                /* check button-[before] */
+                if(self->public_comb_before_button->private_state != Kim_Button_State_Combination_WaitForEnd)
+                {
+                    if(self->public_comb_before_button->private_state != Kim_Button_State_Wait_For_End) {
+                        break;
+                    } else {
+                        self->public_comb_before_button->private_state = Kim_Button_State_Combination_WaitForEnd;
+                    }
+                }
+                self->private_state = Kim_Button_State_Combination_Push;
+                    
+#endif /* combination button */
+
             } else {
                 self->private_state = Kim_Button_State_Wait_For_End;
             }
@@ -632,6 +710,45 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
         }
         break;
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+    case Kim_Button_State_Combination_Push:
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+        KIM_BUTTON_SAFE_CALLBACK(self->public_comb_callback);
+
+        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+        self->private_push_time = 0;
+        self->private_time_stamp_loop = HAL_GetTick();
+        self->private_state = Kim_Button_State_Cool_Down;
+        break;
+
+    case Kim_Button_State_Combination_WaitForEnd:
+        if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        {
+            self->private_state = Kim_Button_State_Combination_Release;
+        }
+        break;
+
+    case Kim_Button_State_Combination_Release:
+        if(HAL_GetTick() - self->private_time_stamp_loop 
+            > KIM_BUTTON_RELEASE_DELAY_TIME)
+        {
+            /* check again */
+            if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+            {
+                self->private_push_time = 0;
+                self->private_time_stamp_loop = HAL_GetTick();
+                self->private_state = Kim_Button_State_Cool_Down;
+            } else {
+                self->private_state = Kim_Button_State_Combination_WaitForEnd;
+            }         
+        }
+        break;
+
+#endif /* button combination */
+
     default:
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
@@ -670,9 +787,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
-        void (*short_push_callback)(void),                                      \
-        void (*long_push_callback)(void),                                       \
-        void (*double_push_callback)(void)                                      \
+        Kim_Button_ShortPushCallBack_t short_push_callback,                     \
+        Kim_Button_LongPushCallBack_t long_push_callback,                       \
+        Kim_Button_DoublePushCallBack_t double_push_callback                    \
     )                                                                           \
     {                                                                           \
         static const uint8_t Normal_Bit_Val =                                   \
