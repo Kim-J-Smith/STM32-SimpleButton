@@ -38,7 +38,7 @@
 
 + ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
 
-+ ✅ **异步处理**：在重循环负载情况下，外部中断触发保证按键请求不会被忽略
++ ✅ **异步处理**：在重循环负载(异步处理函数调用间隔为50ms)情况下，外部中断触发保证按键请求不会被忽略
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
@@ -284,6 +284,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // DEBUG模式下，发生异常会调用的内容，需用户自行填写
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+// 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
@@ -510,5 +514,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // In DEBUG mode, the content that will be called in case of an exception needs to be filled in by the user themselves
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
 /* ====================== Customization END ======================== */
 ```
+
+

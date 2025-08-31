@@ -82,6 +82,9 @@
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
 #define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... can be your function ... */
 
+/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
+
 /* ====================== Customization END ======================== */
 
 
@@ -236,7 +239,11 @@ struct Kim_Button_TypeDef {
 
 /* Macro for suggest inline of private-use functions */
 #if !(defined(DEBUG) || defined(_DEBUG))
+ #if KIM_BUTTON_NO_INLINE_STATE_MACHINE == 0
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
+ #else
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static
+ #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
 #else
  #if defined(__GNUC__)
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline)) \
