@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.1 ( 0007L )
+ * @version         0.1.2 ( 0008L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0007L
+#define     KIM_STM32_HAL_BUTTON_H      0008L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -29,6 +29,7 @@
 // # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
+// # include "stm32h7xx_hal.h"
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
