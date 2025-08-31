@@ -2,11 +2,11 @@
 
 Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
 
-一个单文件的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，采用外部中断加循环内异步处理，非阻塞状态机。
+一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，采用外部中断加循环内异步处理，非阻塞状态机。
 
 ---
 
-### 新增功能特性(v0.1.2): 
+### 新增功能特性(v0.1.2):
 
 + ✅ **调试便捷**：新增单独调试模式设置选项（宏）
 
@@ -45,20 +45,20 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 ---
 
 - [中文](#chinese)
-
-    - [简介](#简介)
-    - [使用方法](#使用方法)
-    - [动态设置](#动态设置)
-    - [注意事项](#注意事项)
-    - [自定义选项（宏）](#自定义选项宏)
+  
+  - [简介](#简介)
+  - [使用方法](#使用方法)
+  - [动态设置](#动态设置)
+  - [注意事项](#注意事项)
+  - [自定义选项（宏）](#自定义选项宏)
 
 - [English](#english)
-
-    - [brief-introduction](#brief-introduction)
-    - [how-to-use](#how-to-use)
-    - [dynamic-settings](#dynamic-settings)
-    - [note-attention](#note)
-    - [customizable-options-macro](#customizable-options-macro)
+  
+  - [brief-introduction](#brief-introduction)
+  - [how-to-use](#how-to-use)
+  - [dynamic-settings](#dynamic-settings)
+  - [note-attention](#note)
+  - [customizable-options-macro](#customizable-options-macro)
 
 ## Chinese <span id="chinese"> </span>
 
@@ -308,8 +308,8 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 ```
 
 - [返回顶部](#stm32-simplebutton)
-
-
+  
+  
 
 ## English <span id="english"> </span>
 
@@ -545,5 +545,3 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 ```
 
 - [Top](#stm32-simplebutton)
-
-
