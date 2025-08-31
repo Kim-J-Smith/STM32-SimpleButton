@@ -196,6 +196,18 @@ struct Kim_Button_TypeDef {
  #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    (0)
 #endif /* KIM_BUTTON_JUDGE_GPIO_PIN_I */
 
+#if defined(GPIOJ_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    ((GPIOx_BASE) == GPIOJ_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_J */
+
+#if defined(GPIOK_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    ((GPIOx_BASE) == GPIOK_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_K */
+
 #define KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, PIN)      \
     ( ((                                                \
         (GPIOx_BASE) == GPIOA_BASE ||                   \
@@ -206,7 +218,9 @@ struct Kim_Button_TypeDef {
         KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE) ||      \
         KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE) ||      \
         KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE) ||      \
-        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)         \
+        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)         \
     ) && (                                              \
         (PIN) == GPIO_PIN_0 || (PIN) == GPIO_PIN_1 ||   \
         (PIN) == GPIO_PIN_2 || (PIN) == GPIO_PIN_3 ||   \
