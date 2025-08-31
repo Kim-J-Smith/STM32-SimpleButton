@@ -1,14 +1,14 @@
 # STM32-SimpleButton
 
-[Chinese] :  一个非常精简的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，非阻塞。
+Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
 
-[English] : A very tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
+一个单文件的STM32按键框架，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，采用外部中断加循环内异步处理，非阻塞状态机。
 
 ---
 
-### 新增功能特性(v0.1.1)：
+### 新增功能特性(v0.1.2): 
 
-+ ✅ **更加精简**：新增设置选项可以降低大量使用按键时的RAM占用
++ ✅ **调试便捷**：新增单独调试模式设置选项（宏）
 
 ### 已有功能特性：
 
@@ -44,7 +44,23 @@
 
 ---
 
-### [Chinese]:
+- [中文](#chinese)
+
+    - [简介](#简介)
+    - [使用方法](#使用方法)
+    - [动态设置](#动态设置)
+    - [注意事项](#注意事项)
+    - [自定义选项（宏）](#自定义选项宏)
+
+- [English](#english)
+
+    - [brief-introduction](#brief-introduction)
+    - [how-to-use](#how-to-use)
+    - [dynamic-settings](#dynamic-settings)
+    - [note-attention](#note)
+    - [customizable-options-macro](#customizable-options-macro)
+
+## Chinese <span id="chinese"> </span>
 
 ![kim_button](.\picture\kim_button.png)
 
@@ -203,7 +219,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 ```c
 /* ============ Users can customize these by themselves(自定义选项开始) ============ */
 
-/***** Select one of the header files given below as needed *****/
+/***** @headerfile Select one of the header files given below as needed *****/
 // 根据芯片型号选择合适的头文件。
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
@@ -291,9 +307,11 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
 
+- [返回顶部](#stm32-simplebutton)
 
 
-### [English]:
+
+## English <span id="english"> </span>
 
 #### Brief introduction:
 
@@ -404,7 +422,7 @@ void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
 
 
 
-#### Dynamic set:
+#### Dynamic settings:
 
 * You can set an independent long-press determination time for each key in the code. An example is as follows:
 
@@ -449,7 +467,13 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 ```c
 /* ============ Users can customize these by themselves ============ */
 
-
+/***** @headerfile Select one of the header files given below as needed *****/
+# include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
+// # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
+// # include "stm32h7xx_hal.h"
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -519,5 +543,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 /* ====================== Customization END ======================== */
 ```
+
+- [Top](#stm32-simplebutton)
 
 
