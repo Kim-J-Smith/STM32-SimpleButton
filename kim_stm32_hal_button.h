@@ -119,7 +119,13 @@ enum Kim_Button_State {
     Kim_Button_State_Cool_Down,
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
     Kim_Button_State_Combination_Push,
+
+    Kim_Button_State_Combination_WaitForEnd,
+
+    Kim_Button_State_Combination_Release,
+
 #endif /* KIM_BUTTON_ENABLE_BUTTON_COMBINATION */
 };
 
@@ -669,16 +675,22 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                     ? Kim_Button_State_Wait_For_Double : Kim_Button_State_Double_Push;
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
                 if(self->public_comb_before_button == 0 || self->public_comb_callback == 0)
                 {
                     break;
                 }
-                if(self->public_comb_before_button->private_state 
-                    != Kim_Button_State_Wait_For_End)
+                /* check button-[before] */
+                if(self->public_comb_before_button->private_state != Kim_Button_State_Combination_WaitForEnd)
                 {
-                    break;
+                    if(self->public_comb_before_button->private_state != Kim_Button_State_Wait_For_End) {
+                        break;
+                    } else {
+                        self->public_comb_before_button->private_state = Kim_Button_State_Combination_WaitForEnd;
+                    }
                 }
                 self->private_state = Kim_Button_State_Combination_Push;
+                    
 #endif /* combination button */
 
             } else {
@@ -710,6 +722,28 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         self->private_push_time = 0;
         self->private_time_stamp_loop = HAL_GetTick();
         self->private_state = Kim_Button_State_Cool_Down;
+        break;
+
+    case Kim_Button_State_Combination_WaitForEnd:
+        if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        {
+            self->private_state = Kim_Button_State_Combination_Release;
+        }
+        break;
+
+    case Kim_Button_State_Combination_Release:
+        if(HAL_GetTick() - self->private_time_stamp_loop 
+            > KIM_BUTTON_RELEASE_DELAY_TIME)
+        {
+            if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+            {
+                self->private_push_time = 0;
+                self->private_time_stamp_loop = HAL_GetTick();
+                self->private_state = Kim_Button_State_Cool_Down;
+            } else {
+                self->private_state = Kim_Button_State_Combination_WaitForEnd;
+            }         
+        }
         break;
 
 #endif /* button combination */
