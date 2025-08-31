@@ -86,6 +86,9 @@
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
+/***** Macro to enable different long push time *****/
+#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
+
 /* ====================== Customization END ======================== */
 
 
@@ -118,6 +121,16 @@ enum Kim_Button_State {
     #define ENUM_BITFIELD(type)     unsigned int 
 #endif /* ENUM_BITFIELD */
 
+typedef void (*Kim_Button_ShortPushCallBack_t)(void);
+
+#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
+    typedef void (*Kim_Button_LongPushCallBack_t)(void);
+#else
+    typedef void (*Kim_Button_LongPushCallBack_t)(uint32_t long_push_tick);
+#endif /* different long push time */
+
+typedef void (*Kim_Button_DoublePushCallBack_t)(void);
+
 /* This struct is for status and behaviour of each button. */
 struct Kim_Button_TypeDef {
     /** @p [private] This member variable will be changed only in interrupt service routine. */
@@ -128,9 +141,9 @@ struct Kim_Button_TypeDef {
 
     /** @b [public] Method for asynchronous handler. Use this method in while loop. */
     void (* method_asynchronous_handler) (
-        void (*short_push_callback)(void),
-        void (*long_push_callback)(void),
-        void (*double_push_callback)(void)
+        Kim_Button_ShortPushCallBack_t short_push_callback,
+        Kim_Button_LongPushCallBack_t long_push_callback,
+        Kim_Button_DoublePushCallBack_t double_push_callback
     );
 
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
@@ -303,9 +316,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     const uint16_t gpio_pin_x,
     const uint32_t exti_trigger_x,
     void (* method_asynchronous_handler) (
-        void (*short_push_callback)(void),
-        void (*long_push_callback)(void),
-        void (*double_push_callback)(void)
+        Kim_Button_ShortPushCallBack_t short_push_callback,
+        Kim_Button_LongPushCallBack_t long_push_callback,
+        Kim_Button_DoublePushCallBack_t double_push_callback
     ),
     void (* method_interrupt_handler) (void)
 )
@@ -526,9 +539,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     const uint32_t gpiox_base,
     const uint16_t gpio_pin_x,
     const uint8_t Normal_Bit_Val,
-    void (* short_push_callback)(void),
-    void (* long_push_callback)(void),
-    void (* double_push_callback)(void)
+    Kim_Button_ShortPushCallBack_t short_push_callback,
+    Kim_Button_LongPushCallBack_t long_push_callback,
+    Kim_Button_DoublePushCallBack_t double_push_callback
 )
 {
     /* Critical Zone Begin */
@@ -592,9 +605,17 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             > KIM_BUTTON_LONG_PUSH_MIN_TIME
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
         )
-        {
+        { 
+#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
+#else
+            uint32_t long_push_tick = HAL_GetTick() - self->private_time_stamp_interrupt;
+            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+            if(long_push_callback != ((void*)0)) {
+                long_push_callback(long_push_tick); 
+            }
+#endif /* different long push time */
         } else {
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(short_push_callback);
@@ -670,9 +691,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
-        void (*short_push_callback)(void),                                      \
-        void (*long_push_callback)(void),                                       \
-        void (*double_push_callback)(void)                                      \
+        Kim_Button_ShortPushCallBack_t short_push_callback,                     \
+        Kim_Button_LongPushCallBack_t long_push_callback,                       \
+        Kim_Button_DoublePushCallBack_t double_push_callback                    \
     )                                                                           \
     {                                                                           \
         static const uint8_t Normal_Bit_Val =                                   \
