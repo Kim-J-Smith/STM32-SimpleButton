@@ -357,8 +357,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         return;
+#endif /* DEBUG */
     } else {
         self->private_is_init = 1;
     }
@@ -449,8 +450,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
 
     /* Configure the GPIOx */
@@ -526,8 +528,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
     HAL_NVIC_SetPriority(
         the_exti_IRQ, 
@@ -754,8 +757,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
 
     /* Critical Zone End */
