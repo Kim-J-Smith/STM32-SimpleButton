@@ -169,12 +169,12 @@ struct Kim_Button_TypeDef {
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
     /** @b [public] Record the combination [before] button pointer. */
-    struct Kim_Button_TypeDef* public_comb_before_button;
+    volatile struct Kim_Button_TypeDef*             public_comb_before_button;
 
     /** @b [public] Record the combination button callback function.
      * (This callback function will be called when button-[This] is released 
      * and button-[before] is in the pressed state.) */
-    Kim_Button_CombinationCallBack_t public_comb_callback;
+    volatile Kim_Button_CombinationCallBack_t       public_comb_callback;
 
 #endif /* button combination */
 
@@ -587,7 +587,13 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     /* Critical Zone Begin */
     KIM_BUTTON_CRITICAL_ZONE_BEGIN();
 
-    switch ((enum Kim_Button_State)self->private_state) {
+    switch ((enum Kim_Button_State)self->private_state) 
+    {
+        /* variables definition in switch...case... */
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+        Kim_Button_CombinationCallBack_t tmp_comb_callback;
+#endif /* button combination */
+
     case Kim_Button_State_Wait_For_Interrupt:
         break;
     case Kim_Button_State_Push_Delay:
@@ -693,7 +699,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                     }
                 }
                 self->private_state = Kim_Button_State_Combination_Push;
-                    
+                tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
 #endif /* combination button */
 
             } else {
@@ -719,7 +725,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     case Kim_Button_State_Combination_Push:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
-        KIM_BUTTON_SAFE_CALLBACK(self->public_comb_callback);
+        KIM_BUTTON_SAFE_CALLBACK(tmp_comb_callback);
 
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
