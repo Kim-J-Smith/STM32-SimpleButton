@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.3 ( 0009L )
+ * @version         0.1.4 ( 0010L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0009L
+#define     KIM_STM32_HAL_BUTTON_H      0010L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -169,12 +169,12 @@ struct Kim_Button_TypeDef {
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
     /** @b [public] Record the combination [before] button pointer. */
-    struct Kim_Button_TypeDef* public_comb_before_button;
+    volatile struct Kim_Button_TypeDef*             public_comb_before_button;
 
     /** @b [public] Record the combination button callback function.
      * (This callback function will be called when button-[This] is released 
      * and button-[before] is in the pressed state.) */
-    Kim_Button_CombinationCallBack_t public_comb_callback;
+    volatile Kim_Button_CombinationCallBack_t       public_comb_callback;
 
 #endif /* button combination */
 
@@ -357,8 +357,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         return;
+#endif /* DEBUG */
     } else {
         self->private_is_init = 1;
     }
@@ -449,8 +450,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
 
     /* Configure the GPIOx */
@@ -526,8 +528,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
     HAL_NVIC_SetPriority(
         the_exti_IRQ, 
@@ -584,7 +587,13 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     /* Critical Zone Begin */
     KIM_BUTTON_CRITICAL_ZONE_BEGIN();
 
-    switch ((enum Kim_Button_State)self->private_state) {
+    switch ((enum Kim_Button_State)self->private_state) 
+    {
+        /* variables definition in switch...case... */
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+        Kim_Button_CombinationCallBack_t tmp_comb_callback;
+#endif /* button combination */
+
     case Kim_Button_State_Wait_For_Interrupt:
         break;
     case Kim_Button_State_Push_Delay:
@@ -690,7 +699,6 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                     }
                 }
                 self->private_state = Kim_Button_State_Combination_Push;
-                    
 #endif /* combination button */
 
             } else {
@@ -714,9 +722,10 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
     case Kim_Button_State_Combination_Push:
+        tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
-        KIM_BUTTON_SAFE_CALLBACK(self->public_comb_callback);
+        KIM_BUTTON_SAFE_CALLBACK(tmp_comb_callback);
 
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
@@ -754,8 +763,9 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
         while(1) {}
-#endif /* DEBUG */
+#else
         break;
+#endif /* DEBUG */
     }
 
     /* Critical Zone End */

@@ -6,10 +6,11 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 ---
 
-### 新增功能特性(v0.1.3):
+### 新增功能特性(v0.1.4):
 
-+ ✅ **新增按键组合功能**：可在[选项](#自定义选项宏)中开启，[示例](#combination_button_example)
-+ ✅ **新增长按计时功能**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启，[示例](#long_push_timing_example)
++ 🛠 **修复debug模式**：修复debug模式的异常警告
+
++ 🛠 **修复组合按键**：修复组合按键在多线程状态下的竞争风险
 
 ### 已有功能特性：
 
@@ -42,6 +43,10 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 + ✅ **异步处理**：在重循环负载(异步处理函数调用间隔为50ms)情况下，外部中断触发保证按键请求不会被忽略
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
+
++ ✅ **支持组合键**：可在[选项](#自定义选项宏)中开启，[示例](#combination_button_example)
+
++ ✅ **支持定时长按**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启，[示例](#long_push_timing_example)
 
 ---
 
