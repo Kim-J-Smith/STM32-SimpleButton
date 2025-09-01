@@ -699,7 +699,6 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
                     }
                 }
                 self->private_state = Kim_Button_State_Combination_Push;
-                tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
 #endif /* combination button */
 
             } else {
@@ -723,6 +722,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
     case Kim_Button_State_Combination_Push:
+        tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
         KIM_BUTTON_SAFE_CALLBACK(tmp_comb_callback);
