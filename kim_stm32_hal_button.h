@@ -820,7 +820,8 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
  *              3. If GPIO_PIN_X is invalid.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
-    struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name);\
+    struct Kim_Button_TypeDef                                                   \
+        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name) = {0};                \
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
