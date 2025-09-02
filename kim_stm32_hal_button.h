@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.4 ( 0010L )
+ * @version         0.1.5 ( 0011L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0010L
+#define     KIM_STM32_HAL_BUTTON_H      0011L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -201,7 +201,7 @@ struct Kim_Button_TypeDef {
     /** @p [private] This member variable is used to record the state of each button. */
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
 
-    /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
+    /** @p [private] This member variable is used to record how many times you push the button(0 ~ 7). */
     uint8_t                                         private_push_time : 3;
 
     /** @p [private] This member variable is used to record the state of initialization. */
@@ -625,7 +625,13 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     case Kim_Button_State_Repeat_Push:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
         KIM_BUTTON_SAFE_CALLBACK(repeat_push_callback);
+#else
+        if(repeat_push_callback != 0) {
+            repeat_push_callback(self->private_push_time);
+        }
+#endif /* more repeat */
         
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
@@ -644,7 +650,15 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
         )
         {
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
             self->private_state = Kim_Button_State_Single_Push;
+#else
+            if(self->private_push_time == 1) {
+                self->private_state = Kim_Button_State_Single_Push;
+            } else {
+                self->private_state = Kim_Button_State_Repeat_Push;
+            }
+#endif /* more repeat */
         }
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
 
@@ -687,8 +701,14 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             {
                 self->private_push_time ++;
                 self->private_time_stamp_loop = HAL_GetTick();
+
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
                 self->private_state = (self->private_push_time == 1)
                     ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#else
+                self->private_state = (self->private_push_time < 7)
+                    ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#endif /* more repeat */
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
