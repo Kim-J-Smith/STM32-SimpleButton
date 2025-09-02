@@ -93,7 +93,7 @@
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
-#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        1
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /* ====================== Customization END ======================== */
 
