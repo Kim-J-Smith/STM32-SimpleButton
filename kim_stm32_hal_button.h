@@ -35,13 +35,14 @@
 /* one tick(one interrupt = 1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_GetTickFreq()))
 /* calculate the tick with the time */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 #define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
@@ -620,6 +621,16 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
         {
             self->private_state = Kim_Button_State_Release_Delay;
+        }
+        else if(HAL_GetTick() - self->private_time_stamp_interrupt 
+            > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
+        {
+#if defined(DEBUG) || defined(_DEBUG)
+            KIM_BUTTON_DEBUG_ERROR_HOOK();
+            while(1) {}
+#else
+            self->private_state = Kim_Button_State_Wait_For_Interrupt;
+#endif /* debug mode */
         }
         break;
     case Kim_Button_State_Repeat_Push:
