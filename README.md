@@ -344,7 +344,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 /* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
 /* calculate the tick with the time(计算宏，由于一次中断计数是1ms，此处tick == time) */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 // 按下按键后，延时（非阻塞）用于消抖的时间
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
@@ -361,13 +361,16 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 // 按键功能执行完毕后的冷却时间
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
+// 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 // 如果这个宏是1，那么上面的TIME不能为每个按钮单独配置（但更节省RAM）
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config(NVIC 中断优先级配置) *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick 抢占优先级
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick 响应优先级
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // 默认配置
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
 
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI 抢占优先级
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI 响应优先级
@@ -729,7 +732,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 /* one tick(one interrupt = 1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
 /* calculate the tick with the time */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 // The delay (non-blocking) used for debouncing after pressing the key
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
@@ -746,12 +749,15 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // CD time for button
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
+// Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick PreemptionPriority
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick SubPriority
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // by default
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
 
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI PreemptionPriority
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI SubPriority
