@@ -1,6 +1,6 @@
 # STM32-SimpleButton
 
-Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/repeat-press/combination-press for each button, non-blocking.
+**Simple** and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer **short-press/long-press/repeat-press/combination-press** for each button, non-blocking.
 
 一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的 **短按/长按/多击/组合键**，采用外部中断加循环内异步处理，非阻塞状态机。
 
@@ -12,23 +12,25 @@ Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, 
 
 ### 已有功能特性：
 
-+ ✅ **按键事件完善**：支持短按、长按、双击 （长按判定时间可以每个按键单独配置）
-+ ✅ **静态参数检查**：静态检查宏函数参数，确保生成代码准确、可靠
-+ ✅ **软件消抖**：采用状态机，非阻塞消抖
-+ ✅ **二次确认**：状态机内部对引脚状态二次确认，屏蔽抖动与意外触发中断的影响
-+ ✅ **回调支持**：每个按键短按、长按、双击均支持独立的回调函数注册，回调函数允许为空
++ ✅ **按键事件完善**：支持 短按、长按([计时长按](#long_push_timing_example))、双击([计数多击](#repeat_button_example))、[组合键](#combination_button_example)
+
++ ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
+
++ ✅ **动态回调**：每个按键短按、长按(计时长按)、双击(计数多击)均支持独立的回调函数动态注册，回调函数允许为空
+
++ ✅ **零开销原则**：对于没有使用的特性(例如组合键)，不产生任何额外的开销
+
 + ✅ **内存精简**：数据结构紧凑，内存占用少
-+ ✅ **配置便捷**：配置相关宏定义集中在文件开头，注释详尽
-+ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码
-+ ✅ **跨平台友好**：支持GCC与ArmCC等编译器
+
++ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码，注释详尽
+
++ ✅ **多编译器支持**：支持GCC与ArmCC等编译器
+
 + ✅ **临界区保护**：多线程数据安全、不冲突
-+ ✅ **调试模式**：增加调试期生效死循环(需在自定义选项启动调试模式)，精准锁定异常
-+ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
-+ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
-+ ✅ **异步处理**：在重循环负载(异步处理函数调用间隔为50ms)情况下，外部中断触发保证按键请求不会被忽略
+
++ ✅ **调试模式**：开启调试模式后可以设置错误钩子，精准锁定异常
+
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
-+ ✅ **支持组合键**：可在[选项](#自定义选项宏)中开启，[示例](#combination_button_example)
-+ ✅ **支持定时长按**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启，[示例](#long_push_timing_example)
 
 ---
 
