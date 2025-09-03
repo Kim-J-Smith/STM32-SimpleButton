@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.4 ( 0010L )
+ * @version         0.1.5 ( 0011L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0010L
+#define     KIM_STM32_HAL_BUTTON_H      0011L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -35,13 +35,14 @@
 /* one tick(one interrupt = 1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_GetTickFreq()))
 /* calculate the tick with the time */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
+#define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
@@ -92,6 +93,9 @@
 /***** Macro to enable button combination *****/
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
+/***** Macro to enable button repeat(2 ~ 7) *****/
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
+
 /* ====================== Customization END ======================== */
 
 
@@ -108,11 +112,11 @@ enum Kim_Button_State {
 
     Kim_Button_State_Wait_For_End,
 
-    Kim_Button_State_Wait_For_Double,
+    Kim_Button_State_Wait_For_Repeat,
 
     Kim_Button_State_Single_Push,
 
-    Kim_Button_State_Double_Push,
+    Kim_Button_State_Repeat_Push,
 
     Kim_Button_State_Release_Delay,
 
@@ -142,7 +146,11 @@ typedef void (*Kim_Button_ShortPushCallBack_t)(void);
     typedef void (*Kim_Button_LongPushCallBack_t)(uint32_t long_push_tick);
 #endif /* different long push time */
 
-typedef void (*Kim_Button_DoublePushCallBack_t)(void);
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
+    typedef void (*Kim_Button_RepeatPushCallBack_t)(void);
+#else
+    typedef void (*Kim_Button_RepeatPushCallBack_t)(uint8_t repeat_time);
+#endif /* repeat more */
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
     typedef void (*Kim_Button_CombinationCallBack_t)(void);
@@ -160,7 +168,7 @@ struct Kim_Button_TypeDef {
     void (* method_asynchronous_handler) (
         Kim_Button_ShortPushCallBack_t short_push_callback,
         Kim_Button_LongPushCallBack_t long_push_callback,
-        Kim_Button_DoublePushCallBack_t double_push_callback
+        Kim_Button_RepeatPushCallBack_t repeat_push_callback
     );
 
     /** @b [public] Method for handler in interrupt (EXTI). Use this method in IT service routine. */
@@ -187,14 +195,14 @@ struct Kim_Button_TypeDef {
     uint16_t                                        public_cool_down_time;
 
     /** @b [public] This member variable is used to record the double push max time. */
-    uint16_t                                        public_double_push_max_time;
+    uint16_t                                        public_repeat_push_max_time;
 
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
 
     /** @p [private] This member variable is used to record the state of each button. */
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
 
-    /** @p [private] This member variable is used to record how many times you push the button(0/1/2). */
+    /** @p [private] This member variable is used to record how many times you push the button(0 ~ 7). */
     uint8_t                                         private_push_time : 3;
 
     /** @p [private] This member variable is used to record the state of initialization. */
@@ -347,7 +355,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     void (* method_asynchronous_handler) (
         Kim_Button_ShortPushCallBack_t short_push_callback,
         Kim_Button_LongPushCallBack_t long_push_callback,
-        Kim_Button_DoublePushCallBack_t double_push_callback
+        Kim_Button_RepeatPushCallBack_t repeat_push_callback
     ),
     void (* method_interrupt_handler) (void)
 )
@@ -378,7 +386,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
     self->public_long_push_min_time = KIM_BUTTON_LONG_PUSH_MIN_TIME;
     self->public_cool_down_time = KIM_BUTTON_COOL_DOWN_TIME;
-    self->public_double_push_max_time = KIM_BUTTON_DOUBLE_PUSH_MAX_TIME;
+    self->public_repeat_push_max_time = KIM_BUTTON_REPEAT_PUSH_MAX_TIME;
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
 
     /* Initialize the public method */
@@ -554,7 +562,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
     struct Kim_Button_TypeDef* const self
 )
 {
-    if( ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Double
+    if( ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Repeat
         || ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Interrupt) 
     {
         self->private_time_stamp_interrupt = HAL_GetTick();
@@ -571,7 +579,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
  * @param[in]       exti_trigger_x - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
  * @param[in]       short_push_callback - callback function for short push.
  * @param[in]       long_push_callback - callback function for long push.
- * @param[in]       double_push_callback - callback function for double push.
+ * @param[in]       repeat_push_callback - callback function for double push.
  * @return          None
  */
 KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHandler(
@@ -581,7 +589,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     const uint8_t Normal_Bit_Val,
     Kim_Button_ShortPushCallBack_t short_push_callback,
     Kim_Button_LongPushCallBack_t long_push_callback,
-    Kim_Button_DoublePushCallBack_t double_push_callback
+    Kim_Button_RepeatPushCallBack_t repeat_push_callback
 )
 {
     /* Critical Zone Begin */
@@ -614,30 +622,54 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         {
             self->private_state = Kim_Button_State_Release_Delay;
         }
+        else if(HAL_GetTick() - self->private_time_stamp_interrupt 
+            > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
+        {
+#if defined(DEBUG) || defined(_DEBUG)
+            KIM_BUTTON_DEBUG_ERROR_HOOK();
+            while(1) {}
+#else
+            self->private_state = Kim_Button_State_Wait_For_Interrupt;
+#endif /* debug mode */
+        }
         break;
-    case Kim_Button_State_Double_Push:
+    case Kim_Button_State_Repeat_Push:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
-        KIM_BUTTON_SAFE_CALLBACK(double_push_callback);
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
+        KIM_BUTTON_SAFE_CALLBACK(repeat_push_callback);
+#else
+        if(repeat_push_callback != 0) {
+            repeat_push_callback(self->private_push_time);
+        }
+#endif /* more repeat */
         
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
         self->private_time_stamp_loop = HAL_GetTick();
         self->private_state = Kim_Button_State_Cool_Down;
         break;
-    case Kim_Button_State_Wait_For_Double:
+    case Kim_Button_State_Wait_For_Repeat:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
         if(HAL_GetTick() - self->private_time_stamp_loop
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
-            > (uint32_t)self->public_double_push_max_time
+            > (uint32_t)self->public_repeat_push_max_time
 #else
-            > KIM_BUTTON_DOUBLE_PUSH_MAX_TIME
+            > KIM_BUTTON_REPEAT_PUSH_MAX_TIME
 #endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
         )
         {
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
             self->private_state = Kim_Button_State_Single_Push;
+#else
+            if(self->private_push_time == 1) {
+                self->private_state = Kim_Button_State_Single_Push;
+            } else {
+                self->private_state = Kim_Button_State_Repeat_Push;
+            }
+#endif /* more repeat */
         }
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
 
@@ -680,8 +712,14 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             {
                 self->private_push_time ++;
                 self->private_time_stamp_loop = HAL_GetTick();
+
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
                 self->private_state = (self->private_push_time == 1)
-                    ? Kim_Button_State_Wait_For_Double : Kim_Button_State_Double_Push;
+                    ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#else
+                self->private_state = (self->private_push_time < 7)
+                    ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#endif /* more repeat */
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
@@ -793,13 +831,14 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
  *              3. If GPIO_PIN_X is invalid.
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
-    struct Kim_Button_TypeDef KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name);\
+    struct Kim_Button_TypeDef                                                   \
+        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name) = {0};                \
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
         Kim_Button_ShortPushCallBack_t short_push_callback,                     \
         Kim_Button_LongPushCallBack_t long_push_callback,                       \
-        Kim_Button_DoublePushCallBack_t double_push_callback                    \
+        Kim_Button_RepeatPushCallBack_t repeat_push_callback                    \
     )                                                                           \
     {                                                                           \
         static const uint8_t Normal_Bit_Val =                                   \
@@ -812,7 +851,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             Normal_Bit_Val,                                                     \
             short_push_callback,                                                \
             long_push_callback,                                                 \
-            double_push_callback                                                \
+            repeat_push_callback                                                \
         );                                                                      \
     }                                                                           \
                                                                                 \

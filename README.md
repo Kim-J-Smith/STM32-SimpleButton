@@ -1,52 +1,36 @@
 # STM32-SimpleButton
 
-Simple and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer short-press/long-press/double-press for each button, non-blocking.
+**Simple** and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer **short-press/long-press/repeat-press/combination-press** for each button, non-blocking.
 
-一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的短按/长按/双击，采用外部中断加循环内异步处理，非阻塞状态机。
+一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的 **短按/长按/多击/组合键**，采用外部中断加循环内异步处理，非阻塞状态机。
 
 ---
 
-### 新增功能特性(v0.1.4):
+### 新增功能特性(v0.1.5):
 
-+ 🛠 **修复debug模式**：修复debug模式的异常警告
-
-+ 🛠 **修复组合按键**：修复组合按键在多线程状态下的竞争风险
++ ✅ **新增支持连按**：先前版本只支持双击，新版本支持最多7次多击按钮，可在[选项](#自定义选项宏)开启，[示例](#repeat_button_example)
 
 ### 已有功能特性：
 
-+ ✅ **按键事件完善**：支持短按、长按、双击 （长按判定时间可以每个按键单独配置）
++ ✅ **按键事件完善**：支持 短按、长按([计时长按](#long_push_timing_example))、双击([计数多击](#repeat_button_example))、[组合键](#combination_button_example)
 
-+ ✅ **静态参数检查**：静态检查宏函数参数，确保生成代码准确、可靠
++ ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
-+ ✅ **软件消抖**：采用状态机，非阻塞消抖
++ ✅ **动态回调**：每个按键短按、长按(计时长按)、双击(计数多击)均支持独立的回调函数动态注册，回调函数允许为空
 
-+ ✅ **二次确认**：状态机内部对引脚状态二次确认，屏蔽抖动与意外触发中断的影响
-
-+ ✅ **回调支持**：每个按键短按、长按、双击均支持独立的回调函数注册，回调函数允许为空
++ ✅ **零开销原则**：对于没有使用的特性(例如组合键)，不产生任何额外的开销
 
 + ✅ **内存精简**：数据结构紧凑，内存占用少
 
-+ ✅ **配置便捷**：配置相关宏定义集中在文件开头，注释详尽
++ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码，注释详尽
 
-+ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码
-
-+ ✅ **跨平台友好**：支持GCC与ArmCC等编译器
++ ✅ **多编译器支持**：支持GCC与ArmCC等编译器
 
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
-+ ✅ **调试模式**：增加调试期生效死循环(需在自定义选项启动调试模式)，精准锁定异常
-
-+ ✅ **临界区保护优化**：单线程危险临界区单独默认保护，多线程临界区可选保护
-
-+ ✅ **智能内联**：修改内联方式，智能内联函数，大幅减少ROM占用
-
-+ ✅ **异步处理**：在重循环负载(异步处理函数调用间隔为50ms)情况下，外部中断触发保证按键请求不会被忽略
++ ✅ **调试模式**：开启调试模式后可以设置错误钩子，精准锁定异常
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
-
-+ ✅ **支持组合键**：可在[选项](#自定义选项宏)中开启，[示例](#combination_button_example)
-
-+ ✅ **支持定时长按**：可以支持不同长按时间触发不同事件，可在[选项](#自定义选项宏)中开启，[示例](#long_push_timing_example)
 
 ---
 
@@ -226,6 +210,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 ```
 
 * 【可选功能】组合按键 <span id="combination_button_example"> </span>
+  * 本项目支持简单的组合键，基本原理是为**当前按键**(button-[this])设置“前置按键”与“组合回调函数”。当前置按键处于按下状态时，按下**当前按键**触发组合回调函数。
 
 ```c
 /***** Macro to enable button combination *****/
@@ -273,9 +258,32 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
+* 【可选功能】多击按键 <span id="repeat_button_example"> </span>
+  * 开启该功能后，双击按键回调函数将变为多击按键回调函数，类型由 `void (*)(void)` 变为 `void (*)(uint8_t)` 。该参数会接收多击按键次数（2 ~ 7次）。示例如下：
 
+```c
 
+/***** Macro to enable button repeat(2 ~ 7) *****/
+// 找到这个宏，将它的值修改为 1
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        1
 
+// 多击回调函数
+void repeat_push_callback(uint8_t push_time)
+{
+    switch(push_time)
+    {
+    case 2: ... break;
+    case 3: ... break;
+    case 4: ... break;
+    ...
+    case 7: ... break;
+    }
+}
+
+// 主循环和中断中正常调用 method_asynchronous_handler 与 method_interrupt_handler。
+// 只需要在调用 XXX.method_asynchronous_handler(..., ..., repeat_push_callback) 第三个参数填多击回调（而非普通模式的双击回调）即可。
+
+```
 
 #### 动态设置：
 
@@ -304,7 +312,7 @@ Kim_Button_myButton.public_cool_down_time = 5000; // 每5s才能触发一次
 // 先初始化
 Kim_Button_Init_myButton();
 
-Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（减少短按响应延迟，放弃双击功能）
+Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击判定（减少短按响应延迟，放弃双击功能）
 ```
 
 
@@ -336,13 +344,13 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 /* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
 /* calculate the tick with the time(计算宏，由于一次中断计数是1ms，此处tick == time) */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 // 按下按键后，延时（非阻塞）用于消抖的时间
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
-// 松开按键后，判定双击的窗口时间。在此期间再次按下，判定为双击。
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
+// 松开按键后，判定双击/多击的窗口时间。在此期间再次按下，判定为双击/多击。
+#define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 
 // 长按判定的最小时间，超过这个时间就判定为长按
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
@@ -353,13 +361,16 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // 按键功能执行完毕后的冷却时间
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
+// 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 // 如果这个宏是1，那么上面的TIME不能为每个按钮单独配置（但更节省RAM）
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config(NVIC 中断优先级配置) *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick 抢占优先级
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick 响应优先级
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // 默认配置
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
 
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI 抢占优先级
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI 响应优先级
@@ -418,6 +429,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击判定（
 // 需要使用 Kim_Button_name.public_comb_before_button = &(先按下的按键); 绑定先按下的按键
 // 与 Kim_Button_name.public_comb_callback = callback_func; 绑定回调函数
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
+/***** Macro to enable button repeat(2 ~ 7) *****/
+// 当宏为 1 时，支持至多 7 次的多击检测（多击次数会作为参数传入回调函数）。为 0 时只支持双击，回调函数无参。
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /* ====================== Customization END(自定义选项结束) ======================== */
 ```
@@ -632,7 +647,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
+* **[optional function]** button repeat
+  * After enabling this function, the double-click key callback function will change to a multi-click key callback function, and its type will change from `void (*)(void)` to `void (*)(uint8_t)`. This parameter will receive multiple keystrokes (2 to 7 times). For example:
 
+```c
+
+/***** Macro to enable button repeat(2 ~ 7) *****/
+// Find this macro and modify its value to 1
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        1
+
+// multi-push callback function
+void repeat_push_callback(uint8_t push_time)
+{
+    switch(push_time)
+    {
+    case 2: ... break;
+    case 3: ... break;
+    case 4: ... break;
+    ...
+    case 7: ... break;
+    }
+}
+
+// method_asynchronous_handler and method_interrupt_handler are called normally in the main loop and interrupts.
+// Just call XXX.method_asynchronous_handler(..., ..., repeat_push_callback), For the third parameter of "repeat_push_callback", fill in the multi-click callback (instead of the double-click callback in the normal mode).
+
+
+```
 
 #### Dynamic settings:
 
@@ -691,13 +732,13 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 /* one tick(one interrupt = 1ms) */
 #define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
 /* calculate the tick with the time */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (_xx_ms))
+#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
 
 // The delay (non-blocking) used for debouncing after pressing the key
 #define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 
 // After releasing the key, determine the window time for double-clicking. If you press again during this period, it will be judged as a double-click.
-#define KIM_BUTTON_DOUBLE_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
+#define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
 
 // The minimum duration for long press determination. If it exceeds this time, it will be determined as a long press
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
@@ -708,12 +749,15 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // CD time for button
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
+// Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** NVIC Priority config *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  0 // SysTick PreemptionPriority
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0 // SysTick SubPriority
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // by default
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
 
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI PreemptionPriority
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI SubPriority
@@ -758,6 +802,9 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 /***** Macro to enable button combination *****/
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+
+/***** Macro to enable button repeat(2 ~ 7) *****/
+#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /* ====================== Customization END ======================== */
 ```
