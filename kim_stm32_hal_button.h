@@ -23,6 +23,9 @@
 
 /* ============ Users can customize these by themselves ============ */
 
+/** @p ------------------------------------------------------------- */
+/** @b HEADER-FILES */
+
 /***** @headerfile Select one of the header files given below as needed *****/
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
@@ -32,6 +35,7 @@
 // # include "stm32h7xx_hal.h"
 
 /** @p ------------------------------------------------------------- */
+/** @b TIMES */
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -47,6 +51,7 @@
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
 /** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
 
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
@@ -80,6 +85,7 @@
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /** @p ------------------------------------------------------------- */
+/** @b FUNCTIONS-HOOKS */
 
 /***** Critical Zone *****/
 /* define follow macro when multi-thread */
@@ -100,16 +106,19 @@
 #define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
 
 /** @p ------------------------------------------------------------- */
+/** @b NAMESPACE-NAME-PREFIX */
 
 /***** @namespace Name Prefix *****/
 /** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
  ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
  **                                                                                     **
- ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
- ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
- ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
- ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
- ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
+ ** @example                                                                            **
+ **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
+ **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
+ **                                                                                     **
+ **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
+ **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
+ **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
 #define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /* ====================== Customization END ======================== */
