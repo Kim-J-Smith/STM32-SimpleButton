@@ -97,7 +97,8 @@
 #define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
 
 /***** Macro for debug hook *****/
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... can be your function ... */
+/* ... can be your function ... */
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
 
 /***** Macro for get tick *****/
 #define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
@@ -389,7 +390,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     if(self->private_is_init != 0) {
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         return;
 #endif /* DEBUG */
@@ -442,7 +442,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
  #if defined(DEBUG) || defined(_DEBUG)
     if(check_error != 0) {
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
     }
  #else
     (void)check_error;
@@ -482,7 +481,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
@@ -560,7 +558,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         the_exti_IRQ = EXTI0_IRQn;
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
@@ -652,7 +649,6 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         {
 #if defined(DEBUG) || defined(_DEBUG)
             KIM_BUTTON_DEBUG_ERROR_HOOK();
-            while(1) {}
 #else
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
 #endif /* debug mode */
@@ -825,7 +821,6 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
