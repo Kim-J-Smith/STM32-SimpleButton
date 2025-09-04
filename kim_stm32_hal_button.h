@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.6 ( 0012L )
+ * @version         0.1.7 ( 0013L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0012L
+#define     KIM_STM32_HAL_BUTTON_H      0013L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -363,24 +363,17 @@ struct Kim_Button_TypeDef {
 #define KIM_BUTTON_CONNECT3_1(_a, _b, _c)   KIM_BUTTON_CONNECT3_2(_a, _b, _c)
 #define KIM_BUTTON_CONNECT3_2(_a, _b, _c)   _a ## _b ## _c
 
-/** 
+/**
  * @p               [private-use]
- * @brief           Init the Button, including the GPIO, EXTI and NVIC.
+ * @brief           Initialize the struct self.
  * @param[inout]    self - pointer to self struct.
- * @param[in]       gpiox_base - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
- * @param[in]       gpio_pin_x - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
- * @param[in]       exti_trigger_x - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
  * @param[in]       method_asynchronous_handler - function pointer to the method named 
  *                  `Kim_Button_Asynchronous_Handler_ ## __name` [static].
  * @param[in]       method_interrupt_handler - function pointer to the method named 
  *                  `Kim_Button_Handler_During_IT_ ## __name` [static].
- * @return          None
  */
-KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitStructSelf(
     struct Kim_Button_TypeDef* const self,
-    const uint32_t gpiox_base,
-    const uint16_t gpio_pin_x,
-    const uint32_t exti_trigger_x,
     void (* method_asynchronous_handler) (
         Kim_Button_ShortPushCallBack_t short_push_callback,
         Kim_Button_LongPushCallBack_t long_push_callback,
@@ -390,15 +383,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 )
 {
     /* Initialize only once */
-    if(self->private_is_init != 0) {
-#if defined(DEBUG) || defined(_DEBUG)
-        KIM_BUTTON_DEBUG_ERROR_HOOK();
-#else
-        return;
-#endif /* DEBUG */
-    } else {
-        self->private_is_init = 1;
-    }
+    self->private_is_init = 1;
 
     /* Initialize the member variables */
     self->private_push_time = 0;
@@ -429,6 +414,15 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 
 #endif /* combination button */
 
+}
+
+/**
+ * @p               [private-use]
+ * @brief           Initialize the SysTick.
+ */
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitSysTick(void)
+{
+
     /* SysTick configure */
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK == 0)
     uint32_t check_error = 0U;
@@ -451,7 +445,21 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
  #endif /* DEBUG */
 #endif /*KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK*/
 
+}
 
+/**
+ * @p               [private-use]
+ * @brief           Initialize the EXTI.
+ * @param[in]       gpiox_base - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
+ * @param[in]       gpio_pin_x - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
+ * @param[in]       exti_trigger_x - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
+ */
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitEXTI(
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint32_t exti_trigger_x
+)
+{
 #if (KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI == 0)
 
     /* Initialize the AFIO Clock(F1xx) or SYSCFG Clock */
@@ -574,6 +582,56 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 #else
     (void)gpio_pin_x;
 #endif /* KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC */
+
+}
+
+/** 
+ * @p               [private-use]
+ * @brief           Init the Button, including the GPIO, EXTI and NVIC.
+ * @param[inout]    self - pointer to self struct.
+ * @param[in]       gpiox_base - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
+ * @param[in]       gpio_pin_x - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
+ * @param[in]       exti_trigger_x - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
+ * @param[in]       method_asynchronous_handler - function pointer to the method named 
+ *                  `Kim_Button_Asynchronous_Handler_ ## __name` [static].
+ * @param[in]       method_interrupt_handler - function pointer to the method named 
+ *                  `Kim_Button_Handler_During_IT_ ## __name` [static].
+ * @return          None
+ */
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint32_t exti_trigger_x,
+    void (* method_asynchronous_handler) (
+        Kim_Button_ShortPushCallBack_t short_push_callback,
+        Kim_Button_LongPushCallBack_t long_push_callback,
+        Kim_Button_RepeatPushCallBack_t repeat_push_callback
+    ),
+    void (* method_interrupt_handler) (void)
+)
+{
+    /* Check whether it is first time to init */
+    if(self->private_is_init != 0) {
+#if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
+#else
+        return;
+#endif /* DEBUG */
+    }
+
+    /* Initialize the struct self */
+    Kim_Button_PrivateUse_InitStructSelf(
+        self,
+        method_asynchronous_handler,
+        method_interrupt_handler
+    );
+
+    /* Initialize the SysTick (include SysTick's NVIC) */
+    Kim_Button_PrivateUse_InitSysTick();
+
+    /* Initialize the EXTI (include EXTI's NVIC) */
+    Kim_Button_PrivateUse_InitEXTI(gpiox_base, gpio_pin_x, exti_trigger_x);
 }
 
 /**
