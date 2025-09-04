@@ -653,6 +653,271 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
     }
 }
 
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateWFIHandler(void)
+{
+    /* do nothing */
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StatePushDelayHandler(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint8_t Normal_Bit_Val
+)
+{
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
+        > KIM_BUTTON_PUSH_DELAY_TIME)
+    {
+        /* Check the GPIO Pin again */
+        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        {
+            self->private_state = Kim_Button_State_Wait_For_Interrupt;
+        } else {
+            self->private_state = Kim_Button_State_Wait_For_End;
+        }
+    }
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateWFEHandler(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint8_t Normal_Bit_Val
+)
+{
+    if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+    {
+        self->private_state = Kim_Button_State_Release_Delay;
+    }
+    else if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
+        > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
+    {
+#if defined(DEBUG) || defined(_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
+#else
+        self->private_state = Kim_Button_State_Wait_For_Interrupt;
+#endif /* debug mode */
+    }
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateRepeatPushHandler(
+    struct Kim_Button_TypeDef* const self,
+    Kim_Button_RepeatPushCallBack_t repeat_push_callback
+)
+{
+    KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
+    KIM_BUTTON_SAFE_CALLBACK(repeat_push_callback);
+#else
+    if(repeat_push_callback != 0) {
+        repeat_push_callback(self->private_push_time);
+    }
+#endif /* more repeat */
+    
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+    self->private_push_time = 0;
+    self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
+    self->private_state = Kim_Button_State_Cool_Down;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateWFRHandler(
+    struct Kim_Button_TypeDef* const self
+)
+{
+    KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+    KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* ALWAYS critical zone begin */
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+        > (uint32_t)self->public_repeat_push_max_time
+#else
+        > KIM_BUTTON_REPEAT_PUSH_MAX_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+    )
+    {
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
+        self->private_state = Kim_Button_State_Single_Push;
+#else
+        if(self->private_push_time == 1) {
+            self->private_state = Kim_Button_State_Single_Push;
+        } else {
+            self->private_state = Kim_Button_State_Repeat_Push;
+        }
+#endif /* more repeat */
+    }
+    KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* ALWAYS critical zone end */
+
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateSiglePushHandler(
+    struct Kim_Button_TypeDef* const self,
+    Kim_Button_ShortPushCallBack_t short_push_callback,
+    Kim_Button_LongPushCallBack_t long_push_callback
+)
+{
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+        > (uint32_t)self->public_long_push_min_time
+#else
+        > KIM_BUTTON_LONG_PUSH_MIN_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+    )
+    { 
+#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+        KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
+#else
+        uint32_t long_push_tick = KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt;
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+        if(long_push_callback != ((void*)0)) {
+            long_push_callback(long_push_tick); 
+        }
+#endif /* different long push time */
+    } else {
+        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+        KIM_BUTTON_SAFE_CALLBACK(short_push_callback);
+    }
+    
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+    self->private_push_time = 0;
+    self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
+    self->private_state = Kim_Button_State_Cool_Down;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateReleaseDelayHandler(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint8_t Normal_Bit_Val
+)
+{
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
+        > KIM_BUTTON_RELEASE_DELAY_TIME)
+    {
+        /* Delay time is over */
+        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        {
+            self->private_push_time ++;
+            self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
+
+#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0 /* more repeat */
+            self->private_state = (self->private_push_time == 1)
+                ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#else
+            self->private_state = (self->private_push_time < 7)
+                ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
+#endif /* more repeat */
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0 /* combination button */
+
+            if(self->public_comb_before_button == 0 || self->public_comb_callback == 0)
+            {
+                return;
+            }
+            /* check button-[before] */
+            if(self->public_comb_before_button->private_state != Kim_Button_State_Combination_WaitForEnd)
+            {
+                if(self->public_comb_before_button->private_state != Kim_Button_State_Wait_For_End) {
+                    return;
+                } else {
+                    self->public_comb_before_button->private_state = Kim_Button_State_Combination_WaitForEnd;
+                }
+            }
+            self->private_state = Kim_Button_State_Combination_Push;
+#endif /* combination button */
+
+        } else {
+            self->private_state = Kim_Button_State_Wait_For_End;
+        }
+    }
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCoolDownHandler(
+    struct Kim_Button_TypeDef* const self
+)
+{
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
+#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
+        > (uint32_t)self->public_cool_down_time
+#else
+        > KIM_BUTTON_COOL_DOWN_TIME
+#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
+    )
+    {
+        self->private_state = Kim_Button_State_Wait_For_Interrupt;
+    }
+}
+
+
+
+#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombinationPushHandler(
+    struct Kim_Button_TypeDef* const self
+)
+{
+    Kim_Button_CombinationCallBack_t tmp_comb_callback;
+    tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
+    KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
+
+    KIM_BUTTON_SAFE_CALLBACK(tmp_comb_callback);
+
+    KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+    self->private_push_time = 0;
+    self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
+    self->private_state = Kim_Button_State_Cool_Down;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombinationWFEHandler(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint8_t Normal_Bit_Val
+)
+{
+    if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+    {
+        self->private_state = Kim_Button_State_Combination_Release;
+    }
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombinationReleaseHandler(
+    struct Kim_Button_TypeDef* const self,
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint8_t Normal_Bit_Val
+)
+{
+    if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
+        > KIM_BUTTON_RELEASE_DELAY_TIME)
+    {
+        /* check again */
+        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        {
+            self->private_push_time = 0;
+            self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
+            self->private_state = Kim_Button_State_Cool_Down;
+        } else {
+            self->private_state = Kim_Button_State_Combination_WaitForEnd;
+        }         
+    }
+}
+
+#endif /* KIM_BUTTON_ENABLE_BUTTON_COMBINATION */
+
+
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateDefaultHandler(void)
+{
+
+#if defined(DEBUG) || defined(_DEBUG)
+    KIM_BUTTON_DEBUG_ERROR_HOOK();
+#endif /* DEBUG */
+
+}
+
 /**
  * @p               [private-use]
  * @brief           Asynchronously call the callback func by the status of each button.
@@ -680,211 +945,59 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 
     switch ((enum Kim_Button_State)self->private_state) 
     {
-        /* variables definition in switch...case... */
-#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
-        Kim_Button_CombinationCallBack_t tmp_comb_callback;
-#endif /* button combination */
 
     case Kim_Button_State_Wait_For_Interrupt:
+        Kim_Button_PrivateUse_StateWFIHandler();
         break;
+
     case Kim_Button_State_Push_Delay:
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
-            > KIM_BUTTON_PUSH_DELAY_TIME)
-        {
-            /* Check the GPIO Pin again */
-            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
-            {
-                self->private_state = Kim_Button_State_Wait_For_Interrupt;
-            } else {
-                self->private_state = Kim_Button_State_Wait_For_End;
-            }
-        }
+        Kim_Button_PrivateUse_StatePushDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
+
     case Kim_Button_State_Wait_For_End:
-        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
-        {
-            self->private_state = Kim_Button_State_Release_Delay;
-        }
-        else if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
-            > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
-        {
-#if defined(DEBUG) || defined(_DEBUG)
-            KIM_BUTTON_DEBUG_ERROR_HOOK();
-#else
-            self->private_state = Kim_Button_State_Wait_For_Interrupt;
-#endif /* debug mode */
-        }
+        Kim_Button_PrivateUse_StateWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
+
     case Kim_Button_State_Repeat_Push:
-        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-
-#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
-        KIM_BUTTON_SAFE_CALLBACK(repeat_push_callback);
-#else
-        if(repeat_push_callback != 0) {
-            repeat_push_callback(self->private_push_time);
-        }
-#endif /* more repeat */
-        
-        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
-        self->private_push_time = 0;
-        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
-        self->private_state = Kim_Button_State_Cool_Down;
+        Kim_Button_PrivateUse_StateRepeatPushHandler(self, repeat_push_callback);
         break;
+
     case Kim_Button_State_Wait_For_Repeat:
-        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-
-        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop
-#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
-            > (uint32_t)self->public_repeat_push_max_time
-#else
-            > KIM_BUTTON_REPEAT_PUSH_MAX_TIME
-#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
-        )
-        {
-#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
-            self->private_state = Kim_Button_State_Single_Push;
-#else
-            if(self->private_push_time == 1) {
-                self->private_state = Kim_Button_State_Single_Push;
-            } else {
-                self->private_state = Kim_Button_State_Repeat_Push;
-            }
-#endif /* more repeat */
-        }
-        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END(); /* DANGEROUS critical zone end */
-
-        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
+        Kim_Button_PrivateUse_StateWFRHandler(self);
         break;
+
     case Kim_Button_State_Single_Push:
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt
-#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
-            > (uint32_t)self->public_long_push_min_time
-#else
-            > KIM_BUTTON_LONG_PUSH_MIN_TIME
-#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
-        )
-        { 
-#if KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH == 0
-            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-            KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
-#else
-            uint32_t long_push_tick = KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt;
-            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-            if(long_push_callback != ((void*)0)) {
-                long_push_callback(long_push_tick); 
-            }
-#endif /* different long push time */
-        } else {
-            KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-            KIM_BUTTON_SAFE_CALLBACK(short_push_callback);
-        }
-        
-        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
-        self->private_push_time = 0;
-        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
-        self->private_state = Kim_Button_State_Cool_Down;
+        Kim_Button_PrivateUse_StateSiglePushHandler(self, short_push_callback, long_push_callback);
         break;
+
     case Kim_Button_State_Release_Delay:
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
-            > KIM_BUTTON_RELEASE_DELAY_TIME)
-        {
-            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
-            {
-                self->private_push_time ++;
-                self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
-
-#if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
-                self->private_state = (self->private_push_time == 1)
-                    ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
-#else
-                self->private_state = (self->private_push_time < 7)
-                    ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
-#endif /* more repeat */
-
-#if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
-
-                if(self->public_comb_before_button == 0 || self->public_comb_callback == 0)
-                {
-                    break;
-                }
-                /* check button-[before] */
-                if(self->public_comb_before_button->private_state != Kim_Button_State_Combination_WaitForEnd)
-                {
-                    if(self->public_comb_before_button->private_state != Kim_Button_State_Wait_For_End) {
-                        break;
-                    } else {
-                        self->public_comb_before_button->private_state = Kim_Button_State_Combination_WaitForEnd;
-                    }
-                }
-                self->private_state = Kim_Button_State_Combination_Push;
-#endif /* combination button */
-
-            } else {
-                self->private_state = Kim_Button_State_Wait_For_End;
-            }
-        }
+        Kim_Button_PrivateUse_StateReleaseDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
+
     case Kim_Button_State_Cool_Down:
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
-#if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
-            > (uint32_t)self->public_cool_down_time
-#else
-            > KIM_BUTTON_COOL_DOWN_TIME
-#endif /* KIM_BUTTON_ONLY_USE_DEFAULT_TIME */
-        )
-        {
-            self->private_state = Kim_Button_State_Wait_For_Interrupt;
-        }
+        Kim_Button_PrivateUse_StateCoolDownHandler(self);
         break;
 
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
     case Kim_Button_State_Combination_Push:
-        tmp_comb_callback = (Kim_Button_CombinationCallBack_t)self->public_comb_callback;
-        KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
-
-        KIM_BUTTON_SAFE_CALLBACK(tmp_comb_callback);
-
-        KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
-        self->private_push_time = 0;
-        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
-        self->private_state = Kim_Button_State_Cool_Down;
+        Kim_Button_PrivateUse_StateCombinationPushHandler(self);
         break;
 
     case Kim_Button_State_Combination_WaitForEnd:
-        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
-        {
-            self->private_state = Kim_Button_State_Combination_Release;
-        }
+        Kim_Button_PrivateUse_StateCombinationWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
 
     case Kim_Button_State_Combination_Release:
-        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
-            > KIM_BUTTON_RELEASE_DELAY_TIME)
-        {
-            /* check again */
-            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
-            {
-                self->private_push_time = 0;
-                self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
-                self->private_state = Kim_Button_State_Cool_Down;
-            } else {
-                self->private_state = Kim_Button_State_Combination_WaitForEnd;
-            }         
-        }
+        Kim_Button_PrivateUse_StateCombinationReleaseHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
 
 #endif /* button combination */
 
     default:
-        /* ... error handler ... */
-#if defined(DEBUG) || defined(_DEBUG)
-        KIM_BUTTON_DEBUG_ERROR_HOOK();
-#else
+        Kim_Button_PrivateUse_StateDefaultHandler();
         break;
-#endif /* DEBUG */
+
     }
 
     /* Critical Zone End */
