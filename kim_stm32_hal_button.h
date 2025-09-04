@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.5 ( 0011L )
+ * @version         0.1.6 ( 0012L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,9 +19,12 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0011L
+#define     KIM_STM32_HAL_BUTTON_H      0012L
 
 /* ============ Users can customize these by themselves ============ */
+
+/** @p ------------------------------------------------------------- */
+/** @b HEADER-FILES */
 
 /***** @headerfile Select one of the header files given below as needed *****/
 # include "stm32f1xx_hal.h"
@@ -30,6 +33,9 @@
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
 // # include "stm32h7xx_hal.h"
+
+/** @p ------------------------------------------------------------- */
+/** @b TIMES */
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -44,8 +50,8 @@
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
-/* If this macro is 1, then the TIME above cannot be configured separately for each button */
-#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
+/** @p ------------------------------------------------------------- */
+/** @b NVIC-PRIORITY */
 
 /***** NVIC Priority config *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
@@ -54,35 +60,20 @@
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0
 
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
+
 /***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
  ***** otherwise define follow macro as @c 0 .                                  *****/
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0
 
-/***** Name Prefix *****/
-/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
- ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
- **                                                                                     **
- ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
- ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
- ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
- ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
- ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
-#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
-
-/***** Critical Zone *****/
-/* define follow macro when multi-thread */
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
-
-/* define follow macro any time */
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
-
-/***** Macro for debug mode *****/
+/***** Macro for use debug mode *****/
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()               /* ... can be your function ... */
 
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
@@ -95,6 +86,44 @@
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
+
+/** @p ------------------------------------------------------------- */
+/** @b FUNCTIONS-HOOKS */
+
+/***** Critical Zone *****/
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug hook *****/
+/* ... can be your function ... */
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
+
+/***** Macro for get tick *****/
+#define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
+
+/***** Macro for GPIO read pin *****/
+#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+/** @p ------------------------------------------------------------- */
+/** @b NAMESPACE-NAME-PREFIX */
+
+/***** @namespace Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example                                                                            **
+ **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
+ **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
+ **                                                                                     **
+ **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
+ **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
+ **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
 
 /* ====================== Customization END ======================== */
 
@@ -364,7 +393,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     if(self->private_is_init != 0) {
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         return;
 #endif /* DEBUG */
@@ -417,7 +445,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
  #if defined(DEBUG) || defined(_DEBUG)
     if(check_error != 0) {
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
     }
  #else
     (void)check_error;
@@ -457,7 +484,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
@@ -535,7 +561,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
         the_exti_IRQ = EXTI0_IRQn;
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
@@ -565,7 +590,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_ITHandler(
     if( ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Repeat
         || ((enum Kim_Button_State)self->private_state) == Kim_Button_State_Wait_For_Interrupt) 
     {
-        self->private_time_stamp_interrupt = HAL_GetTick();
+        self->private_time_stamp_interrupt = KIM_BUTTON_GET_TICK();
         self->private_state = Kim_Button_State_Push_Delay;
     }
 }
@@ -605,11 +630,11 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     case Kim_Button_State_Wait_For_Interrupt:
         break;
     case Kim_Button_State_Push_Delay:
-        if(HAL_GetTick() - self->private_time_stamp_interrupt 
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
             > KIM_BUTTON_PUSH_DELAY_TIME)
         {
             /* Check the GPIO Pin again */
-            if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
             {
                 self->private_state = Kim_Button_State_Wait_For_Interrupt;
             } else {
@@ -618,16 +643,15 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         }
         break;
     case Kim_Button_State_Wait_For_End:
-        if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
         {
             self->private_state = Kim_Button_State_Release_Delay;
         }
-        else if(HAL_GetTick() - self->private_time_stamp_interrupt 
+        else if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
             > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
         {
 #if defined(DEBUG) || defined(_DEBUG)
             KIM_BUTTON_DEBUG_ERROR_HOOK();
-            while(1) {}
 #else
             self->private_state = Kim_Button_State_Wait_For_Interrupt;
 #endif /* debug mode */
@@ -646,14 +670,14 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
-        self->private_time_stamp_loop = HAL_GetTick();
+        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
         self->private_state = Kim_Button_State_Cool_Down;
         break;
     case Kim_Button_State_Wait_For_Repeat:
         KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
 
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN(); /* DANGEROUS critical zone begin */
-        if(HAL_GetTick() - self->private_time_stamp_loop
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
             > (uint32_t)self->public_repeat_push_max_time
 #else
@@ -676,7 +700,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         break;
     case Kim_Button_State_Single_Push:
-        if(HAL_GetTick() - self->private_time_stamp_interrupt
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
             > (uint32_t)self->public_long_push_min_time
 #else
@@ -688,7 +712,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             KIM_BUTTON_SAFE_CALLBACK(long_push_callback);
 #else
-            uint32_t long_push_tick = HAL_GetTick() - self->private_time_stamp_interrupt;
+            uint32_t long_push_tick = KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt;
             KIM_BUTTON_CRITICAL_ZONE_END(); /* Critical Zone End */
             if(long_push_callback != ((void*)0)) {
                 long_push_callback(long_push_tick); 
@@ -701,17 +725,17 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
-        self->private_time_stamp_loop = HAL_GetTick();
+        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
         self->private_state = Kim_Button_State_Cool_Down;
         break;
     case Kim_Button_State_Release_Delay:
-        if(HAL_GetTick() - self->private_time_stamp_loop 
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
             > KIM_BUTTON_RELEASE_DELAY_TIME)
         {
-            if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
             {
                 self->private_push_time ++;
-                self->private_time_stamp_loop = HAL_GetTick();
+                self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
 
 #if KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT == 0
                 self->private_state = (self->private_push_time == 1)
@@ -745,7 +769,7 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         }
         break;
     case Kim_Button_State_Cool_Down:
-        if(HAL_GetTick() - self->private_time_stamp_loop 
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
 #if KIM_BUTTON_ONLY_USE_DEFAULT_TIME == 0
             > (uint32_t)self->public_cool_down_time
 #else
@@ -767,26 +791,26 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
 
         KIM_BUTTON_CRITICAL_ZONE_BEGIN(); /* Critical Zone Begin */
         self->private_push_time = 0;
-        self->private_time_stamp_loop = HAL_GetTick();
+        self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
         self->private_state = Kim_Button_State_Cool_Down;
         break;
 
     case Kim_Button_State_Combination_WaitForEnd:
-        if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+        if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
         {
             self->private_state = Kim_Button_State_Combination_Release;
         }
         break;
 
     case Kim_Button_State_Combination_Release:
-        if(HAL_GetTick() - self->private_time_stamp_loop 
+        if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_loop 
             > KIM_BUTTON_RELEASE_DELAY_TIME)
         {
             /* check again */
-            if(HAL_GPIO_ReadPin((GPIO_TypeDef*)gpiox_base, gpio_pin_x) == Normal_Bit_Val)
+            if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
             {
                 self->private_push_time = 0;
-                self->private_time_stamp_loop = HAL_GetTick();
+                self->private_time_stamp_loop = KIM_BUTTON_GET_TICK();
                 self->private_state = Kim_Button_State_Cool_Down;
             } else {
                 self->private_state = Kim_Button_State_Combination_WaitForEnd;
@@ -800,7 +824,6 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
         /* ... error handler ... */
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
-        while(1) {}
 #else
         break;
 #endif /* DEBUG */
