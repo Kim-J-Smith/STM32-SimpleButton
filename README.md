@@ -6,17 +6,17 @@
 
 ---
 
-### 新增功能特性(v0.1.5):
+### 新增功能特性(v0.1.6):
 
-+ ✅ **新增支持连按**：先前版本只支持双击，新版本支持最多7次多击按钮，可在[选项](#自定义选项宏)开启，[示例](#repeat_button_example)
++ 🛠 **调整[自定义选项（宏）](#自定义选项宏)布局及注释**：方便用户配置自定义选项
 
 ### 已有功能特性：
 
-+ ✅ **按键事件完善**：支持 短按、长按([计时长按](#long_push_timing_example))、双击([计数多击](#repeat_button_example))、[组合键](#combination_button_example)
++ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example)[[开启](#enable_disable_options_ZN)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
-+ ✅ **动态回调**：每个按键短按、长按(计时长按)、双击(计数多击)均支持独立的回调函数动态注册，回调函数允许为空
++ ✅ **动态回调**：每个按键短按、长按/计时长按、双击/计数多击均支持独立的回调函数动态注册，回调函数允许为空
 
 + ✅ **零开销原则**：对于没有使用的特性(例如组合键)，不产生任何额外的开销
 
@@ -327,18 +327,41 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 #### 自定义选项（宏）：
 
-* 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。
+* 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。这些宏选项有以下几个部分：
+  
+  * [头文件选择](#header_file_choice_ZN)
+  * [时间设置](#time_config_ZN)
+  * [中断优先级设置](#NVIC_priority_ZN)
+  * [启动/禁用-选项](#enable_disable_options_ZN)
+  * [函数与钩子](#functions_hooks_ZN)
+  * [名字空间/命名前缀](#namespace_nameprefix_ZN)
+
+* **头文件选择** <span id="header_file_choice_ZN"> </span>
+  
+  * 根据芯片型号选择合适的头文件，取消对应的注释。
 
 ```c
-/* ============ Users can customize these by themselves(自定义选项开始) ============ */
+
+/** @p ------------------------------------------------------------- */
+/** @b HEADER-FILES */
 
 /***** @headerfile Select one of the header files given below as needed *****/
-// 根据芯片型号选择合适的头文件。
+// 根据芯片型号选择合适的头文件，取消对应的注释。
 # include "stm32f1xx_hal.h"
 // # include "stm32f2xx_hal.h"
 // # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
+
+```
+
+* **时间设置** <span id="time_config_ZN"> </span>
+  * 设置各个时间参数，作为**默认值**（每个按键可以分别动态修改）
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
 
 /***** time config(配置各种时间) *****/
 /* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
@@ -364,16 +387,43 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 // 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
+```
+
+* **中断优先级设置** <span id="NVIC_priority_ZN"> </span>
+  * 设置对应的中断优先级。如果使能了 KIM_BUTTON_STM32CUBEMX_GENERATE_* 宏选项，该参数无效。
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b NVIC-PRIORITY */
+
+/***** NVIC Priority config *****/
+
+// SysTick 抢占优先级，默认情况下与 HAL库 设置一致，即 TICK_INT_PRIORITY
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
+
+// SysTick 响应优先级，永远保持0，该宏已弃用！
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
+
+// EXTI 抢占优先级
+#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
+
+// EXTI 响应优先级
+#define KIM_BUTTON_NVIC_EXTI_SubPriority            0
+
+```
+
+* **启动/禁用-选项** <span id="enable_disable_options_ZN"> </span>
+  * 设置下面这些宏定义的值(0/1)，可以使能或失能对应功能/模式。
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
+
 /* If this macro is 1, then the TIME above cannot be configured separately for each button */
 // 如果这个宏是1，那么上面的TIME不能为每个按钮单独配置（但更节省RAM）
 #define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
-
-/***** NVIC Priority config(NVIC 中断优先级配置) *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // 默认配置
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
-
-#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI 抢占优先级
-#define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI 响应优先级
 
 /***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
  ***** otherwise define follow macro as @c 0 .                                  *****/
@@ -383,58 +433,91 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0 // 如果 CubeMX生成了EXTI相关代码，宏改为1
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0 // 如果 CubeMX生成了NVIC相关代码，宏改为1
 
-/***** Name Prefix(自定义前缀名) *****/
-/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
- ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
- **                                                                                     **
- ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
- ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
- ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
- ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
- ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
-// 这个宏定义是用来自定义前缀的，默认为Kim_Button_。如果修改为KEY_，那么在main.c使用的时候
-// 就要使用 `KEY_Init_##__name()` 函数初始化，而非使用默认的 `Kim_Button_Init_##__name()`
-// 相应的，也应该使用 KEY_##__name.method_asynchronous_handler(..., ..., ...) 以及
-// KEY_##__name.method_interrupt_handler()
-#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
-
-/***** Critical Zone(临界区保护，多线程时必须使用) *****/
-/* define follow macro when multi-thread */
-// 以下两个宏定义在多线程场景下需要取消do...while内部注释
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
-
-/* define follow macro any time */
-// 以下两个宏定义即使在单线程下也需要定义
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
-
-/***** Macro for debug mode *****/
+/***** Macro for use debug mode *****/
 // 将宏的值设置为1可以启动调试模式
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
-
-// DEBUG模式下，发生异常会调用的内容，需用户自行填写
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
 
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
 // 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
 /***** Macro to enable different long push time *****/
-// 当宏设置为 1 时，长按回调函数会传入一个 uint32_t 类型的参数，记录着长按的tick数
+// 当宏设置为 1 时，开启计时长按功能
+// 长按回调函数会传入一个 uint32_t 类型的参数，记录着长按的tick数
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
 /***** Macro to enable button combination *****/
-// 当宏设置为 1 时，支持按键组合
+// 当宏设置为 1 时，开启组合键功能
 // 需要使用 Kim_Button_name.public_comb_before_button = &(先按下的按键); 绑定先按下的按键
 // 与 Kim_Button_name.public_comb_callback = callback_func; 绑定回调函数
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
-// 当宏为 1 时，支持至多 7 次的多击检测（多击次数会作为参数传入回调函数）。为 0 时只支持双击，回调函数无参。
+// 当宏为 1 时，开启计数多击功能
+// 支持至多 7 次的多击检测（多击次数会作为参数传入回调函数）。为 0 时只支持双击，回调函数无参。
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
-/* ====================== Customization END(自定义选项结束) ======================== */
+```
+
+* **函数与钩子** <span id="functions_hooks_ZN"> </span>
+  * 设置下面这些宏函数，定制代码行为。例如自定义的 DEBUG_ERROR_HOOK 可在调试模式出现异常时被调用。
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b FUNCTIONS-HOOKS */
+
+/***** Critical Zone *****/
+/* define follow macro when multi-thread */
+// 多线程下需要保护的临界区，单线程下可以注释掉
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
+
+/* define follow macro any time */
+// 单线程与多线程都必须保护的临界区，不建议修改
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug hook *****/
+/* ... can be your function ... */
+// DEBUG 模式下出现异常时会调用的函数，可自定义
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
+
+/***** Macro for get tick *****/
+// 未来扩展使用，不建议修改
+#define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
+
+/***** Macro for GPIO read pin *****/
+// 未来扩展使用，不建议修改
+#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+```
+
+* **名字空间-命名前缀** <span id="namespace_nameprefix_ZN"> </span>
+  * 自定义设置暴露(extern)的内容的命名前缀，包括按键名前缀和初始化函数前缀。
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b NAMESPACE-NAME-PREFIX */
+
+/***** @namespace Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example                                                                            **
+ **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
+ **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
+ **                                                                                     **
+ **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
+ **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
+ **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
+// 这个宏定义是用来自定义前缀的，默认为Kim_Button_。如果修改为KEY_，那么在main.c使用的时候
+// 就要使用 `KEY_Init_##__name()` 函数初始化，而非使用默认的 `Kim_Button_Init_##__name()`
+// 相应的，也应该使用 KEY_##__name.method_asynchronous_handler(..., ..., ...) 以及
+// KEY_##__name.method_interrupt_handler()
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
 ```
 
 - [返回顶部](#stm32-simplebutton)
@@ -715,10 +798,23 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 
 #### Customizable options (Macro):
 
-* At the beginning of the `kim_stm32_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements.
+* At the beginning of the `kim_stm32_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements. These macro options have the following parts:
+  
+  * [Header-File-Choice](#header_file_choice)
+  * [Time-Config](#time_config)
+  * [NVIC-Priority](#NVIC_priority)
+  * [Enable-Disable-Options](#enable_disable_options)
+  * [Functions-Hooks](#functions_hooks)
+  * [Namespace-Nameprefix](#namespace_nameprefix)
+
+* **Header-File-Choice** <span id="header_file_choice"> </span>
+  
+  * Select the appropriate header file based on the chip model and remove the "//".
 
 ```c
-/* ============ Users can customize these by themselves ============ */
+
+/** @p ------------------------------------------------------------- */
+/** @b HEADER-FILES */
 
 /***** @headerfile Select one of the header files given below as needed *****/
 # include "stm32f1xx_hal.h"
@@ -726,7 +822,16 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // # include "stm32f3xx_hal.h"
 // # include "stm32f4xx_hal.h"
 // # include "stm32h4xx_hal.h"
-// # include "stm32h7xx_hal.h"
+
+```
+
+* **Time-Config** <span id="time_config"> </span>
+  * Set each time parameter as the "default value" (each button can be dynamically modified separately)
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
 
 /***** time config *****/
 /* one tick(one interrupt = 1ms) */
@@ -752,15 +857,42 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
-/* If this macro is 1, then the TIME above cannot be configured separately for each button */
-#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
+```
+
+* **NVIC-Priority** <span id="NVIC_priority"> </span>
+  * Set the corresponding interrupt priority. If the KIM_BUTTON_STM32CUBEMX_GENERATE_* macro option is enabled, this parameter is invalid.
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b NVIC-PRIORITY */
 
 /***** NVIC Priority config *****/
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY // by default
+
+// SysTick preemption priority is consistent with the HAL library Settings by default, namely TICK_INT_PRIORITY
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
+
+// The SysTick sub-priority always remains at 0. This macro has been deprecated!
 #define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
 
-#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0 // EXTI PreemptionPriority
-#define KIM_BUTTON_NVIC_EXTI_SubPriority            0 // EXTI SubPriority
+// EXTI PreemptionPriority 
+#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
+
+// EXTI SubPriority
+#define KIM_BUTTON_NVIC_EXTI_SubPriority            0
+
+```
+
+* **Enable-Disable-Options** <span id="enable_disable_options"> </span>
+  * Setting the values (0/1) of the following macro definitions can enable or disable the corresponding function/mode.
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
  ***** otherwise define follow macro as @c 0 .                                  *****/
@@ -768,45 +900,87 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0//If CubeMX generates EXTI code, change the macro to 1
 #define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0//If CubeMX generates NVIC code, change the macro to 1
 
-/***** Name Prefix *****/
-/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
- ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
- **                                                                                     **
- ** @example #define KIM_BUTTON_NAME_PREFIX         KEY_                                **
- ** KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                       **
- ** Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use          **
- ** `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                       **
- ** `KEY_THE_NAME.method_interrupt_handler()`                                           **/
-#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
-
-/***** Critical Zone *****/
-/* define follow macro when multi-thread */
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do {/* __disable_irq(); */} while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do {/* __enable_irq(); */} while(0U)
-
-/* define follow macro any time */
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
-
-/***** Macro for debug mode *****/
+/***** Macro for use debug mode *****/
+// Setting the value of the macro to 1 can start the debug mode
 #define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
 
-// In DEBUG mode, the content that will be called in case of an exception needs to be filled in by the user themselves
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()                     
-
 /***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
+// When the macro is set to 1, the state machine function is not inlined, which can significantly reduce ROM usage, but it may slow down the function call speed
 #define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
 
 /***** Macro to enable different long push time *****/
+// When the macro is set to 1, the timer long-press function is enabled
+// The long press callback function passes a parameter of type uint32_t, which records the number of ticks of the long press
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
 /***** Macro to enable button combination *****/
+// When the macro is set to 1, the key combination function is enabled
+// You need to use "Kim_Button_name.public_comb_before_button = &(button-[before]);" Bind the button-[before]
+// and use "Kim_Button_name.public_comb_callback = callback_func;" binding the callback function
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
+// When the macro is 1, enable the multi-click function
+// Supports up to 7 multi-hit detecations (the number of multi-hits will be passed as a parameter to the callback function). When it is 0, only double-clicking is supported, and the callback function has no parameters.
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
-/* ====================== Customization END ======================== */
+```
+
+* **Functions-Hooks** <span id="functions_hooks"> </span>
+  * Set up the following macro functions to customize the code behavior. For example, a custom DEBUG_ERROR_HOOK can be called when an exception occurs in debug mode.
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b FUNCTIONS-HOOKS */
+
+/***** Critical Zone *****/
+/* define follow macro when multi-thread */
+// Critical sections that need protection in a multi-threaded environment can be commented out in a single-threaded one
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
+
+/* define follow macro any time */
+// Critical sections that must be protected in both single-threaded and multi-threaded environments are not recommended to be modified
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for debug hook *****/
+/* ... can be your function ... */
+// The functions that will be called when an exception occurs in DEBUG mode, which can be customized
+#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
+
+/***** Macro for get tick *****/
+// For future expansion and use, no modifications are recommended
+#define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
+
+/***** Macro for GPIO read pin *****/
+// For future expansion and use, no modifications are recommended
+#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+```
+
+* **Namespace-Nameprefix** <span id="namespace_nameprefix"> </span>
+  * Customize the naming prefix of the exposed (extern) content, including the button name prefix and the initialization function prefix.
+
+```c
+
+/** @p ------------------------------------------------------------- */
+/** @b NAMESPACE-NAME-PREFIX */
+
+/***** @namespace Name Prefix *****/
+/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
+ ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
+ **                                                                                     **
+ ** @example                                                                            **
+ **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
+ **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
+ **                                                                                     **
+ **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
+ **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
+ **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
+#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
+
 ```
 
 - [Top](#stm32-simplebutton)

@@ -51,10 +51,7 @@
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
 
 /** @p ------------------------------------------------------------- */
-/** @b ENABLE-DISABLE-OPTIONS */
-
-/* If this macro is 1, then the TIME above cannot be configured separately for each button */
-#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
+/** @b NVIC-PRIORITY */
 
 /***** NVIC Priority config *****/
 #define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
@@ -62,6 +59,12 @@
 
 #define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
 #define KIM_BUTTON_NVIC_EXTI_SubPriority            0
+
+/** @p ------------------------------------------------------------- */
+/** @b ENABLE-DISABLE-OPTIONS */
+
+/* If this macro is 1, then the TIME above cannot be configured separately for each button */
+#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
 
 /***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
  ***** otherwise define follow macro as @c 0 .                                  *****/
