@@ -671,7 +671,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StatePushDelayHa
         /* Check the GPIO Pin again */
         if(KIM_BUTTON_READ_PIN(gpiox_base, gpio_pin_x) == Normal_Bit_Val)
         {
-            self->private_state = Kim_Button_State_Wait_For_Interrupt;
+            if(self->private_push_time == 0) {
+                self->private_state = Kim_Button_State_Wait_For_Interrupt;
+            } else {
+                self->private_state = Kim_Button_State_Wait_For_Repeat;
+            }
         } else {
             self->private_state = Kim_Button_State_Wait_For_End;
         }
@@ -695,6 +699,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateWFEHandler(
 #if defined(DEBUG) || defined(_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
 #else
+        self->private_push_time = 0;
         self->private_state = Kim_Button_State_Wait_For_Interrupt;
 #endif /* debug mode */
     }
