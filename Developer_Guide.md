@@ -14,6 +14,8 @@ This file is a guide for developer to deeply customize STM32-SimpleButton. You c
 
 * [Structure](#structure)
 
+* [A-New-Chip](#a-new-chip)
+
 ---
 
 ## Do What
@@ -122,3 +124,146 @@ KIM_BUTTON__REGISTER
 * The Main/Helper Handler is static, they are load into Status Struct as two method for OOP.
   
   
+## A New Chip
+
+* What if you don't use STM32 or HAL ? That's fine. You can deeply customize this project by following steps:
+
+  * 1. ignore these macros (delete them because they are only used in STM32-HAL)
+
+```c
+
+/* one tick(one interrupt = 1ms) */
+#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_GetTickFreq()))
+
+/***** NVIC Priority config *****/
+#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
+#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
+
+#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
+#define KIM_BUTTON_NVIC_EXTI_SubPriority            0
+
+/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
+ ***** otherwise define follow macro as @c 0 .                                  *****/
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0
+#define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0
+
+```
+
+  * 2. customize these macros according to your chip.
+
+```c
+
+/* define follow macro when multi-thread */
+#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
+
+/* define follow macro any time */
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
+#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
+
+/***** Macro for get tick *****/
+#define KIM_BUTTON_GET_TICK()                       HAL_GetTick() // need 32bit tick
+
+/***** Macro for GPIO read pin *****/
+#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+/* Macro for judge the EXTI Trigger */
+#define KIM_BUTTON_JUDGE_TRIGGER(EXTI_TRIGGER_X)        \
+    (( (EXTI_TRIGGER_X == EXTI_TRIGGER_RISING_FALLING)  \
+    || (EXTI_TRIGGER_X == EXTI_TRIGGER_NONE) ) ? -1 : 1)
+
+/* Macro for judge GPIOx_BASE and GPIO_PIN_X */
+#if defined(GPIOF_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE)    ((GPIOx_BASE) == GPIOF_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_F */
+
+#if defined(GPIOG_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE)    ((GPIOx_BASE) == GPIOG_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_G */
+
+#if defined(GPIOH_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE)    ((GPIOx_BASE) == GPIOH_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_H */
+
+#if defined(GPIOI_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    ((GPIOx_BASE) == GPIOI_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_I */
+
+#if defined(GPIOJ_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    ((GPIOx_BASE) == GPIOJ_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_J */
+
+#if defined(GPIOK_BASE)
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    ((GPIOx_BASE) == GPIOK_BASE)
+#else
+ #define KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)    (0)
+#endif /* KIM_BUTTON_JUDGE_GPIO_PIN_K */
+
+#define KIM_BUTTON_JUDGE_GPIO_PIN(GPIOx_BASE, PIN)      \
+    ( ((                                                \
+        (GPIOx_BASE) == GPIOA_BASE ||                   \
+        (GPIOx_BASE) == GPIOB_BASE ||                   \
+        (GPIOx_BASE) == GPIOC_BASE ||                   \
+        (GPIOx_BASE) == GPIOD_BASE ||                   \
+        (GPIOx_BASE) == GPIOE_BASE ||                   \
+        KIM_BUTTON_JUDGE_GPIO_PIN_F(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_G(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_H(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_I(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_J(GPIOx_BASE) ||      \
+        KIM_BUTTON_JUDGE_GPIO_PIN_K(GPIOx_BASE)         \
+    ) && (                                              \
+        (PIN) == GPIO_PIN_0 || (PIN) == GPIO_PIN_1 ||   \
+        (PIN) == GPIO_PIN_2 || (PIN) == GPIO_PIN_3 ||   \
+        (PIN) == GPIO_PIN_4 || (PIN) == GPIO_PIN_5 ||   \
+        (PIN) == GPIO_PIN_6 || (PIN) == GPIO_PIN_7 ||   \
+        (PIN) == GPIO_PIN_8 || (PIN) == GPIO_PIN_9 ||   \
+        (PIN) == GPIO_PIN_10 || (PIN) == GPIO_PIN_11 || \
+        (PIN) == GPIO_PIN_12 || (PIN) == GPIO_PIN_13 || \
+        (PIN) == GPIO_PIN_14 || (PIN) == GPIO_PIN_15    \
+    )) ? 1 : -1 )
+
+```
+
+  * 3. customize these functions according to your chip.
+
+```c
+
+/**
+ * @p               [private-use]
+ * @brief           Initialize the SysTick.
+ */
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitSysTick(void)
+{
+  /* ... your code to initialize the SysTick or TIM in your chip */
+}
+
+/**
+ * @p               [private-use]
+ * @brief           Initialize the EXTI.
+ * @param[in]       gpiox_base - can be GPIOA_BASE / GPIOB_BASE / GPIOC_BASE / ...
+ * @param[in]       gpio_pin_x - can be GPIO_PIN_0 / GPIO_PIN_1 / ... / GPIO_PIN_15.
+ * @param[in]       exti_trigger_x - can be EXTI_TRIGGER_RISING or EXTI_TRIGGER_FALLING.
+ */
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitEXTI(
+    const uint32_t gpiox_base,
+    const uint16_t gpio_pin_x,
+    const uint32_t exti_trigger_x
+)
+{
+  /* ... your code to initialize the GPIO EXTI AFIO/SYSCFG in your chip */
+}
+
+```
+
