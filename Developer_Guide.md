@@ -267,3 +267,16 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitEXTI(
 
 ```
 
+  * 4. delete origin header file, add your header file.
+
+```c
+
+/***** @headerfile Select one of the header files given below as needed *****/
+# include "stm32f1xx_hal.h"
+// # include "stm32f2xx_hal.h"
+// # include "stm32f3xx_hal.h"
+// # include "stm32f4xx_hal.h"
+// # include "stm32h4xx_hal.h"
+// # include "stm32h7xx_hal.h"
+
+```
