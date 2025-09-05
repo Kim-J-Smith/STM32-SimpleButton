@@ -13,6 +13,7 @@
   - [动态设置](#动态设置)
   - [注意事项](#注意事项)
   - [自定义选项（宏）](#自定义选项宏)
+  - [状态机图解](#状态机图解)
 
 - [English](#english)
   
@@ -34,11 +35,11 @@
 
 * 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
-#### 新增功能特性(版本-0.1.7)：
+#### 新增功能特性(版本-0.1.8)：
 
-+ 🛠 **修复多击触发失效bug**：修复多击时有概率出现的按键请求无法正常响应的bug
++ ✅ **新增开发者指南**：展示项目架构与设计思路，方便开发者二次开发
 
-+ 🛠 **模块化代码**：使用内联函数模块化代码，方便拓展与问题排查
++ ✅ **新增状态机图解**：有助于理解状态机转换逻辑，[图解](#状态机图解)
 
 #### 已有功能特性：
 
@@ -524,6 +525,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
+### 状态机图解
+
+* **正常电平**指的是按键未被按下时的电平
+
+![State-Machine](./picture/State-Machine.png)
+
 - [返回顶部](#stm32-simplebutton)
   
   
@@ -536,11 +543,9 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 * This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
-#### New Features(Version-0.1.7):
+#### New Features(Version-0.1.8):
 
-+ 🛠 **Fix bug in repeat push**: Fixed the bug where key requests would not respond properly when multiple clicks were made
-
-+ 🛠 **Modular code**: Using inline functions to modularize code makes it convenient for expansion and troubleshooting
++ ✅ **New Developer Guide added**: Showcase the project architecture and design concepts to facilitate developers' secondary development
 
 #### Existing Features:
 
