@@ -6,15 +6,44 @@
 
 ---
 
-### 新增功能特性(v0.1.7):
+- [中文](#chinese)
+  
+  - [简介](#简介)
+  - [使用方法](#使用方法)
+  - [动态设置](#动态设置)
+  - [注意事项](#注意事项)
+  - [自定义选项（宏）](#自定义选项宏)
+  - [状态机图解](#状态机图解)
 
-+ 🛠 **修复多击触发失效bug**：修复多击时有概率出现的按键请求无法正常响应的bug
+- [English](#english)
+  
+  - [brief-introduction](#brief-introduction)
+  - [how-to-use](#how-to-use)
+  - [dynamic-settings](#dynamic-settings)
+  - [note-attention](#note)
+  - [customizable-options-macro](#customizable-options-macro)
 
-+ 🛠 **模块化代码**：使用内联函数模块化代码，方便拓展与问题排查
+- [START-NOW 立刻开始](#start-now-立刻开始)
 
-### 已有功能特性：
+---
 
-+ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example)[[开启](#enable_disable_options_ZN)]
+## Chinese <span id="chinese"> </span>
+
+![kim_button](./picture/kim_button.png)
+
+### 简介：
+
+* 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
+  
+#### 新增功能特性(版本-0.1.8)：
+
++ ✅ **新增开发者指南**：展示项目架构与设计思路，方便开发者二次开发
+
++ ✅ **新增状态机图解**：有助于理解状态机转换逻辑，[图解](#状态机图解)
+
+#### 已有功能特性：
+
++ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_ZN)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example_ZN)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example_ZN)[[开启](#enable_disable_options_ZN)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
@@ -32,39 +61,11 @@
 
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
-+ ✅ **调试模式**：开启调试模式后可以设置错误钩子，精准锁定异常
++ ✅ **调试模式**：[开启](#enable_disable_options_ZN)调试模式后可以设置[错误钩子](#functions_hooks_ZN)，精准锁定异常
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
----
-
-- [中文](#chinese)
-  
-  - [简介](#简介)
-  - [使用方法](#使用方法)
-  - [动态设置](#动态设置)
-  - [注意事项](#注意事项)
-  - [自定义选项（宏）](#自定义选项宏)
-
-- [English](#english)
-  
-  - [brief-introduction](#brief-introduction)
-  - [how-to-use](#how-to-use)
-  - [dynamic-settings](#dynamic-settings)
-  - [note-attention](#note)
-  - [customizable-options-macro](#customizable-options-macro)
-
-## Chinese <span id="chinese"> </span>
-
-![kim_button](./picture/kim_button.png)
-
-#### 简介：
-
-* 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
-  
-  
-
-#### 使用方法：
+### 使用方法：
 
 * 首先，假设我们有三个文件（`main.c` , `my_button.c` , `my_button.h` ）。其中，my_button.c 文件存放按键代码，my_button.h 文件存放必要的声明，main.c 调用代码。
 
@@ -164,7 +165,7 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 }
 ```
 
-* 【可选功能】计时长按 <span id="long_push_timing_example"> </span>
+* 【可选功能】计时长按 <span id="long_push_timing_example_ZN"> </span>
 
 ```c
 /***** Macro to enable different long push time *****/
@@ -213,7 +214,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】组合按键 <span id="combination_button_example"> </span>
+* 【可选功能】组合按键 <span id="combination_button_example_ZN"> </span>
   * 本项目支持简单的组合键，基本原理是为**当前按键**(button-[this])设置“前置按键”与“组合回调函数”。当前置按键处于按下状态时，按下**当前按键**触发组合回调函数。
 
 ```c
@@ -262,7 +263,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】多击按键 <span id="repeat_button_example"> </span>
+* 【可选功能】多击按键 <span id="repeat_button_example_ZN"> </span>
   * 开启该功能后，双击按键回调函数将变为多击按键回调函数，类型由 `void (*)(void)` 变为 `void (*)(uint8_t)` 。该参数会接收多击按键次数（2 ~ 7次）。示例如下：
 
 ```c
@@ -289,7 +290,7 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
-#### 动态设置：
+### 动态设置：
 
 * 可以在代码中为每个按键设置独立的长按判定时间，示例如下：
 
@@ -321,7 +322,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 
 
-#### 注意事项：
+### 注意事项：
 
 * ~~使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】~~ （v0.0.5后完全不冲突）
 
@@ -329,7 +330,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
   
   
 
-#### 自定义选项（宏）：
+### 自定义选项（宏）：
 
 * 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。这些宏选项有以下几个部分：
   
@@ -389,7 +390,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
 // 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
-#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
 
 ```
 
@@ -524,21 +525,55 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
+### 状态机图解
+
+* **正常电平**指的是按键未被按下时的电平
+
+![State-Machine](./picture/State-Machine.png)
+
 - [返回顶部](#stm32-simplebutton)
   
   
 
 ## English <span id="english"> </span>
 
-#### Brief introduction:
+(PS: Because of the machine translation, you may see words "key" and "button". They mean the same in this project.)
+
+### Brief introduction:
 
 * This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
-  
+#### New Features(Version-0.1.8):
 
-#### How to use：
++ ✅ **New Developer Guide added**: Showcase the project architecture and design concepts to facilitate developers' secondary development
 
-* First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the key codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
+#### Existing Features:
+
++ ✅ **Rich Press Event**: Supports short-push, long-push/[timing-long-push](#long_push_timing_example)[[ENABLE](#enable_disable_options)], double-push/[repeat-counter-push](#repeat_button_example)[[ENABLE](#enable_disable_options)], [button-combination](#combination_button_example)[[ENABLE](#enable_disable_options)]
+
++ ✅ **State Machine**: Non-blocking software debouncing, secondary confirmation of pin status, and asynchronous code processing
+
++ ✅ **Use EXTI**: The buttons are triggered by external interrupts to ensure that button requests will not be ignored due to polling blocking
+
++ ✅ **Dynamic Callback**: Each button short press, long press/timer long press, double-click/count multiple press supports independent callback function dynamic registration, and the callback function is allowed to be empty
+
++ ✅ **Zero Overhead**: For features that are not used (such as combination buttons), no additional overhead is incurred
+
++ ✅ **Memory Reduction**: The data structure is compact and the memory usage is low
+
++ ✅ **Start Now**: The project has **only one file**, and only one macro definition is needed to generate the required code, with detailed comments
+
++ ✅ **Support Multiple Compilers**: It supports GCC and ArmCC compilers
+
++ ✅ **Critical Section Protection**: Multi-threaded data is secure and conflict-free
+
++ ✅ **DEBUG Mode**: After enabling the debug mode, error hooks can be set to precisely lock onto anomalies
+
++ ✅ **Customized Buttons**: Support setting each judgment time separately for each button
+
+### How to use: 
+
+* First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the button codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
 
 * Then, in `my_button.c`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
   
@@ -546,7 +581,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
   /* The following is the content of my_button.c */ 
   #include "kim_stm32_hal_button.h" // Include header files
   
-  // The sequence is port base address, pin number, trigger edge selection, and key name(up to you)
+  // The sequence is port base address, pin number, trigger edge selection, and button(key) name(up to you)
   KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // Note: No need to add ;
   ```
   
@@ -762,7 +797,7 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
-#### Dynamic settings:
+### Dynamic settings:
 
 * You can set an independent long-press determination time for each key in the code. An example is as follows:
 
@@ -792,7 +827,7 @@ Kim_Button_Init_myButton();
 Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-click determination (reduce the response delay of short presses and abandon the double-click function)
 ```
 
-#### Note：
+### Note：
 
 * ~~SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]~~ (After v0.0.5, there is no conflict)
 
@@ -800,7 +835,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
   
   
 
-#### Customizable options (Macro):
+### Customizable options (Macro):
 
 * At the beginning of the `kim_stm32_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements. These macro options have the following parts:
   
@@ -859,7 +894,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
 // Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
-#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(600000)      /* 10 min */
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
 
 ```
 
@@ -988,3 +1023,11 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 ```
 
 - [Top](#stm32-simplebutton)
+
+### START NOW 立刻开始
+
+```shell
+
+git clone https://github.com/Kim-J-Smith/STM32-SimpleButton.git
+
+```
