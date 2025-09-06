@@ -331,8 +331,13 @@ struct Kim_Button_TypeDef {
     #define KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE    static inline
 #endif /* FORCE_INLINE */
 
+/* Macro for debug */
+#if KIM_BUTTON_USE_DEBUG_MODE != 0
+    #define KIM_BUTTON_DEBUG
+#endif
+
 /* Macro for suggest inline of private-use functions */
-#if !(defined(DEBUG) || defined(_DEBUG))
+#if !defined(KIM_BUTTON_DEBUG)
  #if KIM_BUTTON_NO_INLINE_STATE_MACHINE == 0
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
  #else
@@ -341,18 +346,13 @@ struct Kim_Button_TypeDef {
 #else
  #if defined(__GNUC__)
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline)) \
-                                                        __attribute__((optimize("O1")))
+                                                        __attribute__((optimize("O1"))) __attribute__((unused))
  #elif defined(__CC_ARM)
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((noinline))
  #else
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static 
  #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
 #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
-
-/* Macro for debug */
-#if KIM_BUTTON_USE_DEBUG_MODE != 0
-    #define DEBUG
-#endif
 
 /* Macro to connect macro */
 #define KIM_BUTTON_CONNECT(_a, _b)          KIM_BUTTON_CONNECT_1(_a, _b)
@@ -436,13 +436,13 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitSysTick(void
     uwTickPrio = KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority;
 
     /* error handler */
- #if defined(DEBUG) || defined(_DEBUG)
+ #if defined(KIM_BUTTON_DEBUG)
     if(check_error != 0) {
         KIM_BUTTON_DEBUG_ERROR_HOOK();
     }
  #else
     (void)check_error;
- #endif /* DEBUG */
+ #endif /* Debug Mode */
 #endif /*KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK*/
 
 }
@@ -490,11 +490,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitEXTI(
         break;
     default:
         /* ... error handler ... */
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(KIM_BUTTON_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
 #else
         break;
-#endif /* DEBUG */
+#endif /* Debug Mode */
     }
 
     /* Configure the GPIOx */
@@ -567,11 +567,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitEXTI(
     default:
         /* ... error handler ... */
         the_exti_IRQ = EXTI0_IRQn;
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(KIM_BUTTON_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
 #else
         break;
-#endif /* DEBUG */
+#endif /* Debug Mode */
     }
     HAL_NVIC_SetPriority(
         the_exti_IRQ, 
@@ -613,11 +613,11 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
 {
     /* Check whether it is first time to init */
     if(self->private_is_init != 0) {
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(KIM_BUTTON_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
 #else
         return;
-#endif /* DEBUG */
+#endif /* Debug Mode */
     }
 
     /* Initialize the struct self */
@@ -696,12 +696,12 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateWFEHandler(
     else if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
         > KIM_BUTTON_SAFE_PUSH_MAX_TIME)
     {
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(KIM_BUTTON_DEBUG)
         KIM_BUTTON_DEBUG_ERROR_HOOK();
 #else
         self->private_push_time = 0;
         self->private_state = Kim_Button_State_Wait_For_Interrupt;
-#endif /* debug mode */
+#endif /* Debug Mode */
     }
 }
 
@@ -917,9 +917,9 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombination
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateDefaultHandler(void)
 {
 
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(KIM_BUTTON_DEBUG)
     KIM_BUTTON_DEBUG_ERROR_HOOK();
-#endif /* DEBUG */
+#endif /* Debug Mode */
 
 }
 
