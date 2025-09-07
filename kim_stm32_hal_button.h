@@ -370,12 +370,12 @@ struct Kim_Button_TypeDef {
     || (defined(__cplusplus) && __cplusplus >= 201103L)
 
  /* count macro */
- #define KIM_BUTTON_COUNT_ARGS_IMPL(1, 2, 3, 4, 5, 6, 7, 8\
-    9, 10, 11, 12, 13, 14, 15, 16, N, ...) N 
+ #define KIM_BUTTON_COUNT_ARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, \
+    _9, _10, _11, _12, _13, _14, _15, _16, N, ...) N 
 
  /* count macro */
  #define KIM_BUTTON_COUNT_ARGS(...)         \
-    KIM_BUTTON_COUNT_ARGS_IMPL(__VA_ARGS__, 16, 15, 14, 13, 12\
+    KIM_BUTTON_COUNT_ARGS_IMPL(__VA_ARGS__, 16, 15, 14, 13, 12, \
     11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
 #endif /* greater than C99 or C++11 */
@@ -1227,7 +1227,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_10(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_11(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1257,7 +1257,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_11(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_12(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1289,7 +1289,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_12(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_13(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1323,7 +1323,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_13(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_14(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1359,7 +1359,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_14(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_15(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1397,7 +1397,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_15(
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
 uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
-    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_1,
     struct Kim_Button_TypeDef _button_2,
     struct Kim_Button_TypeDef _button_3,
     struct Kim_Button_TypeDef _button_4,
@@ -1446,9 +1446,8 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
 #if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
     || (defined(__cplusplus) && __cplusplus >= 201103L)
 
- #define KIM_BUTTON_ALL_IS_WFI(...)                                                             \
-    Kim_Button_PrivateUse_AllIsWFI ## _ ## KIM_BUTTON_COUNT_ARGS(__VA_ARGS__)(__VA_ARGS__)
-
+ #define KIM_BUTTON_ALL_IS_WFI(...) \
+    KIM_BUTTON_CONNECT3(Kim_Button_PrivateUse_AllIsWFI, _, KIM_BUTTON_COUNT_ARGS(__VA_ARGS__))(__VA_ARGS__)
 
  /**
   * @brief      User can use this macro to begin low-power mode.
