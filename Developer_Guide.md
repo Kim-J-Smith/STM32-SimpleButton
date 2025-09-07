@@ -168,6 +168,9 @@ KIM_BUTTON__REGISTER
 /***** Macro for GPIO read pin *****/
 #define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
 
+/***** Macro to stat low power mode *****/
+#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
+
 /* Macro for judge the EXTI Trigger */
 #define KIM_BUTTON_JUDGE_TRIGGER(EXTI_TRIGGER_X)        \
     (( (EXTI_TRIGGER_X == EXTI_TRIGGER_RISING_FALLING)  \
