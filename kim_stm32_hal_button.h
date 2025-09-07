@@ -344,7 +344,11 @@ struct Kim_Button_TypeDef {
  #if KIM_BUTTON_NO_INLINE_STATE_MACHINE == 0
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static inline
  #else
+  #if defined(__GNUC__) || defined(__clang__)
+    #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static __attribute__((unused))
+  #else
     #define KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE      static
+  #endif /* GCC or ARM_CC */
  #endif /* KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE */
 #else
  #if defined(__GNUC__)
