@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.8 ( 0014L )
+ * @version         0.1.9 ( 0015L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -19,7 +19,7 @@
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0014L
+#define     KIM_STM32_HAL_BUTTON_H      0015L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -108,6 +108,9 @@
 
 /***** Macro for GPIO read pin *****/
 #define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+/***** Macro to stat low power mode *****/
+#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
 
 /** @p ------------------------------------------------------------- */
 /** @b NAMESPACE-NAME-PREFIX */
@@ -243,7 +246,7 @@ struct Kim_Button_TypeDef {
 #endif /* __cplusplus enum & struct */
 
 
-/* ======= [private use] Some private-use functions [static] ======= */
+/* ========= [private use] Some private-use macros [static] ======== */
 
 /* Macro for judge the EXTI Trigger */
 #define KIM_BUTTON_JUDGE_TRIGGER(EXTI_TRIGGER_X)        \
@@ -362,6 +365,26 @@ struct Kim_Button_TypeDef {
 #define KIM_BUTTON_CONNECT3(_a, _b, _c)     KIM_BUTTON_CONNECT3_1(_a, _b, _c)
 #define KIM_BUTTON_CONNECT3_1(_a, _b, _c)   KIM_BUTTON_CONNECT3_2(_a, _b, _c)
 #define KIM_BUTTON_CONNECT3_2(_a, _b, _c)   _a ## _b ## _c
+
+#if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
+    || (defined(__cplusplus) && __cplusplus >= 201103L)
+
+ /* count macro */
+ #define KIM_BUTTON_COUNT_ARGS_IMPL(1, 2, 3, 4, 5, 6, 7, 8\
+    9, 10, 11, 12, 13, 14, 15, 16, N, ...) N 
+
+ /* count macro */
+ #define KIM_BUTTON_COUNT_ARGS(...)         \
+    KIM_BUTTON_COUNT_ARGS_IMPL(__VA_ARGS__, 16, 15, 14, 13, 12\
+    11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+
+#endif /* greater than C99 or C++11 */
+
+/* ================== Private-use Macros END ======================= */
+
+
+
+/* ======= [private use] Some private-use functions [static] ======= */
 
 /**
  * @p               [private-use]
@@ -1009,8 +1032,446 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     KIM_BUTTON_CRITICAL_ZONE_END(); 
 }
 
+#if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
+    || (defined(__cplusplus) && __cplusplus >= 201103L)
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_1(
+    struct Kim_Button_TypeDef _button_1
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_2(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_3(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_4(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_5(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_6(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_7(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_8(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_9(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_10(
+    struct Kim_Button_TypeDef _button_1,
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_11(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_12(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11,
+    struct Kim_Button_TypeDef _button_12
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_12.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_13(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11,
+    struct Kim_Button_TypeDef _button_12,
+    struct Kim_Button_TypeDef _button_13
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_12.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_13.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_14(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11,
+    struct Kim_Button_TypeDef _button_12,
+    struct Kim_Button_TypeDef _button_13,
+    struct Kim_Button_TypeDef _button_14
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_12.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_13.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_14.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_15(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11,
+    struct Kim_Button_TypeDef _button_12,
+    struct Kim_Button_TypeDef _button_13,
+    struct Kim_Button_TypeDef _button_14,
+    struct Kim_Button_TypeDef _button_15
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_12.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_13.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_14.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_15.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE 
+uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
+    struct Kim_Button_TypeDef _button_1
+    struct Kim_Button_TypeDef _button_2,
+    struct Kim_Button_TypeDef _button_3,
+    struct Kim_Button_TypeDef _button_4,
+    struct Kim_Button_TypeDef _button_5,
+    struct Kim_Button_TypeDef _button_6,
+    struct Kim_Button_TypeDef _button_7,
+    struct Kim_Button_TypeDef _button_8,
+    struct Kim_Button_TypeDef _button_9,
+    struct Kim_Button_TypeDef _button_10,
+    struct Kim_Button_TypeDef _button_11,
+    struct Kim_Button_TypeDef _button_12,
+    struct Kim_Button_TypeDef _button_13,
+    struct Kim_Button_TypeDef _button_14,
+    struct Kim_Button_TypeDef _button_15,
+    struct Kim_Button_TypeDef _button_16
+)
+{
+    uint32_t ret_val = 1;
+    ret_val &= (_button_1.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_2.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_3.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_4.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_5.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_6.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_7.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_8.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_9.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_10.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_11.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_12.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_13.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_14.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_15.private_state == Kim_Button_State_Wait_For_Interrupt);
+    ret_val &= (_button_16.private_state == Kim_Button_State_Wait_For_Interrupt);
+    return ret_val;
+}
+
+#endif /* greater than C99 or C++11 */
+
 /* ================ Private-use functions END ====================== */
 
+
+
+/* ========= [public use] Some private-use macros [static] ========= */
+
+#if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
+    || (defined(__cplusplus) && __cplusplus >= 201103L)
+
+ #define KIM_BUTTON_ALL_IS_WFI(...)                                                             \
+    Kim_Button_PrivateUse_AllIsWFI ## _ ## KIM_BUTTON_COUNT_ARGS(__VA_ARGS__)(__VA_ARGS__)
+
+
+ /**
+  * @brief      User can use this macro to begin low-power mode.
+  *             the parameter must be all button status struct.
+  * @param[in]  _ All button-status struct.
+  * @example    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2)
+  */
+ #define KIM_BUTTON__LOW_POWER(...)                 \
+    do {                                            \
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN();    \
+        if(KIM_BUTTON_ALL_IS_WFI(__VA_ARGS__))      \
+        {                                           \
+            KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END();  \
+            KIM_BUTTON_START_LOW_POWER();           \
+        } else {                                    \
+            KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END();  \
+        }                                           \
+    } while(0U)
+
+
+#endif /* greater than C99 or C++11 */
+
+/* =================== Public-use Macros END ======================= */
 
 
 /**
