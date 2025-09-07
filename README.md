@@ -35,11 +35,9 @@
 
 * 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
-#### 新增功能特性(版本-0.1.8)：
+#### 新增功能特性(版本-0.1.9)：
 
-+ ✅ **新增开发者指南**：展示项目架构与设计思路，方便开发者二次开发
-
-+ ✅ **新增状态机图解**：有助于理解状态机转换逻辑，[图解](#状态机图解)
++ ✅ **新增低功耗支持**：[自定义低功耗进入函数](#functions_hooks_ZN) [示例代码](#low_power_example_ZN) (需要C99或C++11以上版本才支持)
 
 #### 已有功能特性：
 
@@ -290,6 +288,23 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
+* 【可选功能】低功耗 <span id="low_power_example_ZN"> </span>
+
+```c
+
+int main(void)
+{
+  while(1)
+  {
+    /* 其他内容正常书写，在while循环恰当位置调用这样一个宏函数 */
+    /* 参数为：所有按键的“状态结构体变量”(Kim_Button_ + 按键名)。 参数是可变数量的。 */
+    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2, Kim_Button_myButton3);
+  }
+}
+
+```
+
+
 ### 动态设置：
 
 * 可以在代码中为每个按键设置独立的长按判定时间，示例如下：
@@ -496,6 +511,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 // 未来扩展使用，不建议修改
 #define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
 
+/***** Macro to stat low power mode *****/
+// 进入低功耗模式的宏函数，可自定义
+#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
+
 ```
 
 * **名字空间-命名前缀** <span id="namespace_nameprefix_ZN"> </span>
@@ -543,9 +562,9 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 * This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
-#### New Features(Version-0.1.8):
+#### New Features(Version-0.1.9):
 
-+ ✅ **New Developer Guide added**: Showcase the project architecture and design concepts to facilitate developers' secondary development
++ ✅ **New Low Power Mode**: [Custom low-power entry function](#functions_hooks) [Example code](#low_power_example) (version should greater than C99 or C++11)
 
 #### Existing Features:
 
@@ -797,6 +816,23 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
+* **[optional function]** Low Power <span id="low_power_example"> </span>
+
+```c
+
+int main(void)
+{
+  while(1)
+  {
+    /* Write the other content normally and call such a macro function at an appropriate position in the while loop */
+    /* The parameter is: the "state structure variable" of all buttons (Kim_Button_ + button name). The parameters are of a variable number. */
+    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2, Kim_Button_myButton3);
+  }
+}
+
+```
+
+
 ### Dynamic settings:
 
 * You can set an independent long-press determination time for each key in the code. An example is as follows:
@@ -996,6 +1032,10 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 /***** Macro for GPIO read pin *****/
 // For future expansion and use, no modifications are recommended
 #define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
+
+/***** Macro to stat low power mode *****/
+// Macro functions for entering low-power mode, which can be customized
+#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
 
 ```
 
