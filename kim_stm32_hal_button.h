@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.1.9 ( 0015L )
+ * @version         0.2.0 ( 0016L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -15,11 +15,12 @@
  * 
  * @copyright       This project complies with the MIT License.
  *                  Refer to the LICENCE in root for more details.
+ *                  <https://github.com/Kim-J-Smith/STM32-SimpleButton>
  */
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0015L
+#define     KIM_STM32_HAL_BUTTON_H      0016L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -1456,7 +1457,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
  /**
   * @brief      User can use this macro to begin low-power mode.
   *             the parameter must be all button status struct.
-  * @param[in]  _ All button-status struct.
+  * @param[in]  ... - All button-status struct.
   * @example    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2)
   */
  #define KIM_BUTTON__LOW_POWER(...)                 \
@@ -1464,11 +1465,9 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
         KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN();    \
         if(KIM_BUTTON_ALL_IS_WFI(__VA_ARGS__))      \
         {                                           \
-            KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END();  \
             KIM_BUTTON_START_LOW_POWER();           \
-        } else {                                    \
-            KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END();  \
         }                                           \
+        KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END();      \
     } while(0U)
 
 

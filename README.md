@@ -6,6 +6,10 @@
 
 ---
 
+## VERSION  -  *0.2.0-Stable*
+
+---
+
 - [中文](#chinese)
   
   - [简介](#简介)
@@ -35,15 +39,17 @@
 
 * 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
-#### 新增功能特性(版本-0.1.9)：
+#### 新增功能特性(版本-0.2.0)：
 
-+ ✅ **新增低功耗支持**：[自定义低功耗进入函数](#functions_hooks_ZN) [示例代码](#low_power_example_ZN) (需要C99或C++11以上版本才支持)
++ 🛠 **修复低功耗进入函数临界区**：使得低功耗进入部分原子化，规避错误休眠风险
 
 #### 已有功能特性：
 
 + ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_ZN)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example_ZN)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example_ZN)[[开启](#enable_disable_options_ZN)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
+
++ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_ZN),支持自定义[低功耗进入函数](#functions_hooks_ZN)
 
 + ✅ **外部中断**：按键采用外部中断触发，保证按键请求不会因轮询阻塞被忽略
 
@@ -562,15 +568,17 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 * This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
-#### New Features(Version-0.1.9):
+#### New Features(Version-0.2.0):
 
-+ ✅ **New Low Power Mode**: [Custom low-power entry function](#functions_hooks) [Example code](#low_power_example) (version should greater than C99 or C++11)
++ 🛠 **Fix low-power entry function**: Make low power consumption partially atomized to avoid the risk of incorrect sleep 
 
 #### Existing Features:
 
 + ✅ **Rich Press Event**: Supports short-push, long-push/[timing-long-push](#long_push_timing_example)[[ENABLE](#enable_disable_options)], double-push/[repeat-counter-push](#repeat_button_example)[[ENABLE](#enable_disable_options)], [button-combination](#combination_button_example)[[ENABLE](#enable_disable_options)]
 
 + ✅ **State Machine**: Non-blocking software debouncing, secondary confirmation of pin status, and asynchronous code processing
+
++ ✅ **Low Power Support**：Support entering [Low power mode](#low_power_example) when the buttons are idle, Support custom [low-power entry function](#functions_hooks)
 
 + ✅ **Use EXTI**: The buttons are triggered by external interrupts to ensure that button requests will not be ignored due to polling blocking
 
