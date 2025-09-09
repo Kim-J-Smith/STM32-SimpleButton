@@ -45,6 +45,8 @@
 
 #### 已有功能特性：
 
++ ✅ **仅含头文件**：该项目仅含`kim_stm32_hal_button.h`一个头文件，不含任何`.c`文件
+
 + ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_zh_)[[开启](#enable_disable_options_zh_)]、双击/[计数多击](#repeat_button_example_zh_)[[开启](#enable_disable_options_zh_)]、[组合键](#combination_button_example_zh_)[[开启](#enable_disable_options_zh_)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
@@ -59,11 +61,9 @@
 
 + ✅ **内存精简**：数据结构紧凑，内存占用少
 
-+ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码，注释详尽
-
 + ✅ **多编译器支持**：支持GCC与ArmCC等编译器
 
-+ ✅ **临界区保护**：多线程数据安全、不冲突
++ ✅ **临界区保护**：多线程数据安全、不冲突，理论支持操作系统
 
 + ✅ **调试模式**：[开启](#enable_disable_options_zh_)调试模式后可以设置[错误钩子](#functions_hooks_zh_)，精准锁定异常
 
@@ -72,6 +72,19 @@
 ### 使用方法：
 
 * 首先，假设我们有三个文件（`main.c` , `my_button.c` , `my_button.h` ）。其中，my_button.c 文件存放按键代码，my_button.h 文件存放必要的声明，main.c 调用代码。
+
+```
+.
+|
++-- kim_stm32_hal_button.h 本项目提供的头文件
+|
++-- my_button.c (#include "kim_stm32_hal_button.h") 用户自建文件，用于定义按键
+|
++-- my_button.h (#include "kim_stm32_hal_button.h") 用户自建文件，用于声明按键
+|
++-- main.c (#include "my_button.h") 用户自建文件，用于调用按键
+
+```
 
 * 然后，在 `my_button.c` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__REGISTER** 宏 来生成所需要的代码。（示例如下： 我的按钮触发时会在 **PA7** 产升**下降沿** 信号， 我想给按钮取名为**myButton**  ）
 
@@ -143,7 +156,7 @@ int main(void)
 //        如果没有使用 STM32CubeMX 生成对应中断代码，则需要在 EXTI?_IRQHandler()函数中调用(? 为0~4，9_5或15_10)
 //        下面演示两种写法
 
-// 写法一：
+// 第三处-写法一：
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
      /* ... 其他无关代码 ... */
@@ -155,7 +168,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
      /* ... 其他无关代码 ... */
 }
 
-// 写法二：（可以尝试在stm32_xxxx_it.c文件中找一下这个回调函数，如果没有就自己写）
+// 第三处-写法二：（可以尝试在stm32_xxxx_it.c文件中找一下这个回调函数，如果没有就自己写）
 void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 {
      /* ... 其他无关代码 ... */
@@ -173,7 +186,7 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 
 ```c
 /***** Macro to enable different long push time *****/
-// 找到这个宏，将它的值修改为 1
+// 找到这个宏，将它的值修改为 1，长按功能会升级为定时长按，长按回调函数将接收长按时间作为参数。
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
 
 // 准备好带 uint32_t 参数的长按回调函数（名字随意）
@@ -574,6 +587,8 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 #### Existing Features:
 
++ ✅ **Header-only**: just include `kim_stm32_hal_button.h`, no `.c` file needed
+
 + ✅ **Rich Press Event**: Supports short-push, long-push/[timing-long-push](#long_push_timing_example)[[ENABLE](#enable_disable_options)], double-push/[repeat-counter-push](#repeat_button_example)[[ENABLE](#enable_disable_options)], [button-combination](#combination_button_example)[[ENABLE](#enable_disable_options)]
 
 + ✅ **State Machine**: Non-blocking software debouncing, secondary confirmation of pin status, and asynchronous code processing
@@ -587,8 +602,6 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 + ✅ **Zero Overhead**: For features that are not used (such as combination buttons), no additional overhead is incurred
 
 + ✅ **Memory Reduction**: The data structure is compact and the memory usage is low
-
-+ ✅ **Start Now**: The project has **only one file**, and only one macro definition is needed to generate the required code, with detailed comments
 
 + ✅ **Support Multiple Compilers**: It supports GCC and ArmCC compilers
 
