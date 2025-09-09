@@ -6,7 +6,7 @@
 
 ---
 
-## VERSION  -  *0.2.0-Stable*
+## VERSION  -  *0.2.0s-Stable*
 
 ---
 
@@ -45,11 +45,11 @@
 
 #### 已有功能特性：
 
-+ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_ZN)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example_ZN)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example_ZN)[[开启](#enable_disable_options_ZN)]
++ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_zh_)[[开启](#enable_disable_options_zh_)]、双击/[计数多击](#repeat_button_example_zh_)[[开启](#enable_disable_options_zh_)]、[组合键](#combination_button_example_zh_)[[开启](#enable_disable_options_zh_)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
-+ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_ZN),支持自定义[低功耗进入函数](#functions_hooks_ZN)
++ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_zh_),支持自定义[低功耗进入函数](#functions_hooks_zh_)
 
 + ✅ **外部中断**：按键采用外部中断触发，保证按键请求不会因轮询阻塞被忽略
 
@@ -65,7 +65,7 @@
 
 + ✅ **临界区保护**：多线程数据安全、不冲突
 
-+ ✅ **调试模式**：[开启](#enable_disable_options_ZN)调试模式后可以设置[错误钩子](#functions_hooks_ZN)，精准锁定异常
++ ✅ **调试模式**：[开启](#enable_disable_options_zh_)调试模式后可以设置[错误钩子](#functions_hooks_zh_)，精准锁定异常
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
@@ -169,7 +169,7 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 }
 ```
 
-* 【可选功能】计时长按 <span id="long_push_timing_example_ZN"> </span>
+* 【可选功能】计时长按 <span id="long_push_timing_example_zh_"> </span>
 
 ```c
 /***** Macro to enable different long push time *****/
@@ -218,7 +218,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】组合按键 <span id="combination_button_example_ZN"> </span>
+* 【可选功能】组合按键 <span id="combination_button_example_zh_"> </span>
   * 本项目支持简单的组合键，基本原理是为**当前按键**(button-[this])设置“前置按键”与“组合回调函数”。当前置按键处于按下状态时，按下**当前按键**触发组合回调函数。
 
 ```c
@@ -267,7 +267,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】多击按键 <span id="repeat_button_example_ZN"> </span>
+* 【可选功能】多击按键 <span id="repeat_button_example_zh_"> </span>
   * 开启该功能后，双击按键回调函数将变为多击按键回调函数，类型由 `void (*)(void)` 变为 `void (*)(uint8_t)` 。该参数会接收多击按键次数（2 ~ 7次）。示例如下：
 
 ```c
@@ -294,7 +294,7 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
-* 【可选功能】低功耗 <span id="low_power_example_ZN"> </span>
+* 【可选功能】低功耗 <span id="low_power_example_zh_"> </span>
 
 ```c
 
@@ -355,14 +355,14 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 * 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。这些宏选项有以下几个部分：
   
-  * [头文件选择](#header_file_choice_ZN)
-  * [时间设置](#time_config_ZN)
-  * [中断优先级设置](#NVIC_priority_ZN)
-  * [启动/禁用-选项](#enable_disable_options_ZN)
-  * [函数与钩子](#functions_hooks_ZN)
-  * [名字空间/命名前缀](#namespace_nameprefix_ZN)
+  * [头文件选择](#header_file_choice_zh_)
+  * [时间设置](#time_config_zh_)
+  * [中断优先级设置](#NVIC_priority_zh_)
+  * [启动/禁用-选项](#enable_disable_options_zh_)
+  * [函数与钩子](#functions_hooks_zh_)
+  * [名字空间/命名前缀](#namespace_nameprefix_zh_)
 
-* **头文件选择** <span id="header_file_choice_ZN"> </span>
+* **头文件选择** <span id="header_file_choice_zh_"> </span>
   
   * 根据芯片型号选择合适的头文件，取消对应的注释。
 
@@ -381,7 +381,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **时间设置** <span id="time_config_ZN"> </span>
+* **时间设置** <span id="time_config_zh_"> </span>
   * 设置各个时间参数，作为**默认值**（每个按键可以分别动态修改）
 
 ```c
@@ -415,7 +415,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **中断优先级设置** <span id="NVIC_priority_ZN"> </span>
+* **中断优先级设置** <span id="NVIC_priority_zh_"> </span>
   * 设置对应的中断优先级。如果使能了 KIM_BUTTON_STM32CUBEMX_GENERATE_* 宏选项，该参数无效。
 
 ```c
@@ -439,7 +439,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **启动/禁用-选项** <span id="enable_disable_options_ZN"> </span>
+* **启动/禁用-选项** <span id="enable_disable_options_zh_"> </span>
   * 设置下面这些宏定义的值(0/1)，可以使能或失能对应功能/模式。
 
 ```c
@@ -485,7 +485,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **函数与钩子** <span id="functions_hooks_ZN"> </span>
+* **函数与钩子** <span id="functions_hooks_zh_"> </span>
   * 设置下面这些宏函数，定制代码行为。例如自定义的 DEBUG_ERROR_HOOK 可在调试模式出现异常时被调用。
 
 ```c
@@ -523,7 +523,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **名字空间-命名前缀** <span id="namespace_nameprefix_ZN"> </span>
+* **名字空间-命名前缀** <span id="namespace_nameprefix_zh_"> </span>
   * 自定义设置暴露(extern)的内容的命名前缀，包括按键名前缀和初始化函数前缀。
 
 ```c
