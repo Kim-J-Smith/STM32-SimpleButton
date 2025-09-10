@@ -84,7 +84,7 @@
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
 /***** Macro to enable button combination *****/
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        1
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0

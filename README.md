@@ -11,8 +11,8 @@
 ---
 
 - [STM32-SimpleButton](#stm32-simplebutton)
-  - [VERSION  -  *0.2.0s-Stable*](#version-----020s-stable)
-  - [Chinese  ](#chinese--)
+
+  - [中文](#chinese)
     - [简介：](#简介)
       - [新增功能特性(版本-0.2.0)：](#新增功能特性版本-020)
       - [已有功能特性：](#已有功能特性)
@@ -21,7 +21,8 @@
     - [注意事项：](#注意事项)
     - [自定义选项（宏）：](#自定义选项宏)
     - [状态机图解](#状态机图解)
-  - [English  ](#english--)
+
+  - [English](#english)
     - [Brief introduction:](#brief-introduction)
       - [New Features(Version-0.2.0):](#new-featuresversion-020)
       - [Existing Features:](#existing-features)
@@ -29,7 +30,9 @@
     - [Dynamic settings:](#dynamic-settings)
     - [Note：](#note)
     - [Customizable options (Macro):](#customizable-options-macro)
-    - [START NOW 立刻开始](#start-now-立刻开始)
+
+
+  - [START NOW 立刻开始](#start-now-立刻开始)
 
 ---
 
@@ -38,8 +41,6 @@
 
 
 ### 简介：
-
-* 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
 #### 新增功能特性(版本-0.2.0)：
 
@@ -430,6 +431,9 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 // 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
 
+// 组合键的前置按键的最大按下保持时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
+#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
+
 ```
 
 * **中断优先级设置** <span id="NVIC_priority_zh_"> </span>
@@ -663,11 +667,9 @@ stateDiagram-v2
 
 ## English <span id="english"> </span>
 
-(PS: Because of the machine translation, you may see words "key" and "button". They mean the same in this project.)
+(PS: *Because of the machine translation, you may see words "key" and "button". They mean the same in this project.*)
 
 ### Brief introduction:
-
-* This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
 #### New Features(Version-0.2.0):
 
@@ -1038,8 +1040,11 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // CD time for button
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
-// Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+// The maximum holding time for normal long push. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
+
+// The maximum holding time for [front(before)]-button of "combination button". Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
 
 ```
 

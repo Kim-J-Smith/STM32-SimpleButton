@@ -2,7 +2,7 @@
 
 ---
 
-This file is a guide for developer to deeply customize STM32-SimpleButton. You can understand how this project works and the logic of it.
+### This file is a guide for developer to deeply customize STM32-SimpleButton. You can understand how this project works and the logic of it.
 
 ---
 
