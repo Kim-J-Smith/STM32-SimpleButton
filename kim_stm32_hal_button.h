@@ -49,7 +49,8 @@
 #define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
 #define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
-#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
+#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min for WFE */
+#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
 
 /** @p ------------------------------------------------------------- */
 /** @b NVIC-PRIORITY */
@@ -83,7 +84,7 @@
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
 
 /***** Macro to enable button combination *****/
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        1
 
 /***** Macro to enable button repeat(2 ~ 7) *****/
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
@@ -914,6 +915,16 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombination
     {
         self->private_state = Kim_Button_State_Combination_Release;
     }
+    else if(KIM_BUTTON_GET_TICK() - self->private_time_stamp_interrupt 
+        > KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME)
+    {
+#if defined(KIM_BUTTON_DEBUG)
+        KIM_BUTTON_DEBUG_ERROR_HOOK();
+#else
+        self->private_push_time = 0;
+        self->private_state = Kim_Button_State_Wait_For_Interrupt;
+#endif /* Debug Mode */
+    }
 }
 
 KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateCombinationReleaseHandler(
@@ -1451,6 +1462,11 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
 #if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
     || (defined(__cplusplus) && __cplusplus >= 201103L)
 
+ /**
+  * @brief      Check whether all the buttons are in an idle(WFI) state.
+  * @param[in]  ... - All button-status struct.
+  * @return     1: Yes.   0: No.
+  */
  #define KIM_BUTTON_ALL_IS_WFI(...) \
     KIM_BUTTON_CONNECT3(Kim_Button_PrivateUse_AllIsWFI, _, KIM_BUTTON_COUNT_ARGS(__VA_ARGS__))(__VA_ARGS__)
 
@@ -1458,7 +1474,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
   * @brief      User can use this macro to begin low-power mode.
   *             the parameter must be all button status struct.
   * @param[in]  ... - All button-status struct.
-  * @example    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2)
+  * @example    KIM_BUTTON__LOW_POWER (Kim_Button_myButton1, Kim_Button_myButton2)
   */
  #define KIM_BUTTON__LOW_POWER(...)                 \
     do {                                            \

@@ -10,30 +10,32 @@
 
 ---
 
-- [中文](#chinese)
-  
-  - [简介](#简介)
-  - [使用方法](#使用方法)
-  - [动态设置](#动态设置)
-  - [注意事项](#注意事项)
-  - [自定义选项（宏）](#自定义选项宏)
-  - [状态机图解](#状态机图解)
-
-- [English](#english)
-  
-  - [brief-introduction](#brief-introduction)
-  - [how-to-use](#how-to-use)
-  - [dynamic-settings](#dynamic-settings)
-  - [note-attention](#note)
-  - [customizable-options-macro](#customizable-options-macro)
-
-- [START-NOW 立刻开始](#start-now-立刻开始)
+- [STM32-SimpleButton](#stm32-simplebutton)
+  - [VERSION  -  *0.2.0s-Stable*](#version-----020s-stable)
+  - [Chinese  ](#chinese--)
+    - [简介：](#简介)
+      - [新增功能特性(版本-0.2.0)：](#新增功能特性版本-020)
+      - [已有功能特性：](#已有功能特性)
+    - [使用方法：](#使用方法)
+    - [动态设置：](#动态设置)
+    - [注意事项：](#注意事项)
+    - [自定义选项（宏）：](#自定义选项宏)
+    - [状态机图解](#状态机图解)
+  - [English  ](#english--)
+    - [Brief introduction:](#brief-introduction)
+      - [New Features(Version-0.2.0):](#new-featuresversion-020)
+      - [Existing Features:](#existing-features)
+    - [How to use:](#how-to-use)
+    - [Dynamic settings:](#dynamic-settings)
+    - [Note：](#note)
+    - [Customizable options (Macro):](#customizable-options-macro)
+    - [START NOW 立刻开始](#start-now-立刻开始)
 
 ---
 
 ## Chinese <span id="chinese"> </span>
 
-![kim_button](./picture/kim_button.png)
+
 
 ### 简介：
 
@@ -253,6 +255,8 @@ int main(void)
     // 假设我要设置组合键：在KEY1按下期间，KEY2按下并释放后会调用 CombinationCallBack
     // 以下配置必须在初始化函数之后
     Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // KEY2的前置按键是KEY1
+
+    // ！注意 组合键回调函数绑定在后按下的按键上！
     Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
 
     while(1)
@@ -565,9 +569,93 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ### 状态机图解
 
-* **正常电平**指的是按键未被按下时的电平
+```mermaid
 
-![State-Machine](./picture/State-Machine.png)
+stateDiagram-v2
+    [*] --> Wait_For_Interrupt
+    
+    %% 核心状态转换流程
+    Wait_For_Interrupt --> Push_Delay: 中断触发(引脚电平变化)
+    Push_Delay --> Wait_For_End: 40ms后**确认按下**
+    Push_Delay --> Wait_For_Interrupt: 40ms后**发现是误触发**
+    Wait_For_End --> Release_Delay: 引脚释放
+    Release_Delay --> Wait_For_Repeat: 40ms后**确认释放**
+    Wait_For_Repeat --> Repeat_Push: 300ms内再次按下
+    Wait_For_Repeat --> Single_Push: 300ms超时
+    Repeat_Push --> Cool_Down: 执行 双击/计数多击 回调
+    Single_Push --> Cool_Down: 执行 短按、长按/计时长按 回调
+    Cool_Down --> Wait_For_Interrupt: 冷却时间结束
+    
+    %% 组合键状态转换（可选）
+    Wait_For_End --> Combination_WaitForEnd: 作为**前置按键**时，后置按键被按下
+    Combination_WaitForEnd --> Combination_Release: 组合键释放
+    Combination_Release --> Combination_WaitForEnd: 40ms后仍按下
+    Combination_Release --> Cool_Down: 40ms后**确认释放**
+    Cool_Down --> Combination_Release: 40ms后**发现未释放**
+    Release_Delay --> Combination_Push: 组合键触发
+    Combination_Push --> Cool_Down: 执行 组合键 回调
+    
+    %% 错误处理/安全机制
+    Wait_For_End --> Wait_For_Interrupt: 按下超时60秒
+    Combination_WaitForEnd --> Wait_For_Interrupt: 按下超时60秒
+    
+    %% 状态说明
+    note left of Wait_For_Interrupt
+        初始/空闲状态
+        等待中断触发
+    end note
+    
+    note right of Push_Delay
+        按下消抖状态
+        持续40ms
+    end note
+    
+    note right of Wait_For_End
+        等待释放状态
+        监测引脚状态
+    end note
+    
+    note right of Release_Delay
+        释放消抖状态
+        持续40ms
+    end note
+    
+    note right of Wait_For_Repeat
+        等待重复按键
+        持续300ms
+    end note
+    
+    note right of Repeat_Push
+        重复按键触发
+        执行多击回调
+    end note
+    
+    note right of Single_Push
+        单次按键触发
+        执行短按/长按回调
+    end note
+    
+    note left of Cool_Down
+        冷却状态
+        可配置冷却时间
+    end note
+    
+    note right of Combination_WaitForEnd
+        组合键等待结束
+        监测前置按键状态
+    end note
+    
+    note left of Combination_Release
+        组合键释放检测
+        持续40ms
+    end note
+    
+    note left of Combination_Push
+        组合键触发
+        执行组合键回调
+    end note
+
+```
 
 - [返回顶部](#stm32-simplebutton)
   
