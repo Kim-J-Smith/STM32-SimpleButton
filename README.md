@@ -2,42 +2,45 @@
 
 **Simple** and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer **short-press/long-press/repeat-press/combination-press** for each button, non-blocking.
 
-一个单文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的 **短按/长按/多击/组合键**，采用外部中断加循环内异步处理，非阻塞状态机。
+一个仅含头文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的 **短按/长按/多击/组合键**，支持**多线程**、**低功耗**，采用外部中断加循环内异步处理，非阻塞状态机。
 
 ---
 
-## VERSION  -  *0.2.0-Stable*
+## VERSION  -  *0.2.0s-Stable*
 
 ---
 
-- [中文](#chinese)
-  
-  - [简介](#简介)
-  - [使用方法](#使用方法)
-  - [动态设置](#动态设置)
-  - [注意事项](#注意事项)
-  - [自定义选项（宏）](#自定义选项宏)
-  - [状态机图解](#状态机图解)
+- [STM32-SimpleButton](#stm32-simplebutton)
 
-- [English](#english)
-  
-  - [brief-introduction](#brief-introduction)
-  - [how-to-use](#how-to-use)
-  - [dynamic-settings](#dynamic-settings)
-  - [note-attention](#note)
-  - [customizable-options-macro](#customizable-options-macro)
+  - [中文](#chinese)
+    - [简介：](#简介)
+      - [新增功能特性(版本-0.2.0)：](#新增功能特性版本-020)
+      - [已有功能特性：](#已有功能特性)
+    - [使用方法：](#使用方法)
+    - [动态设置：](#动态设置)
+    - [注意事项：](#注意事项)
+    - [自定义选项（宏）：](#自定义选项宏)
+    - [状态机图解](#状态机图解)
 
-- [START-NOW 立刻开始](#start-now-立刻开始)
+  - [English](#english)
+    - [Brief introduction:](#brief-introduction)
+      - [New Features(Version-0.2.0):](#new-featuresversion-020)
+      - [Existing Features:](#existing-features)
+    - [How to use:](#how-to-use)
+    - [Dynamic settings:](#dynamic-settings)
+    - [Note：](#note)
+    - [Customizable options (Macro):](#customizable-options-macro)
+
+
+  - [START NOW 立刻开始](#start-now-立刻开始)
 
 ---
 
 ## Chinese <span id="chinese"> </span>
 
-![kim_button](./picture/kim_button.png)
+
 
 ### 简介：
-
-* 本项目仅含**一个**文件，即 `kim_stm32_hal_button.h` 。只需要使用一个宏定义即可生成全部所需代码。
   
 #### 新增功能特性(版本-0.2.0)：
 
@@ -45,11 +48,13 @@
 
 #### 已有功能特性：
 
-+ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_ZN)[[开启](#enable_disable_options_ZN)]、双击/[计数多击](#repeat_button_example_ZN)[[开启](#enable_disable_options_ZN)]、[组合键](#combination_button_example_ZN)[[开启](#enable_disable_options_ZN)]
++ ✅ **仅含头文件**：该项目仅含`kim_stm32_hal_button.h`一个头文件，不含任何`.c`文件
+
++ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_zh_)[[开启](#enable_disable_options_zh_)]、双击/[计数多击](#repeat_button_example_zh_)[[开启](#enable_disable_options_zh_)]、[组合键](#combination_button_example_zh_)[[开启](#enable_disable_options_zh_)]
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
-+ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_ZN),支持自定义[低功耗进入函数](#functions_hooks_ZN)
++ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_zh_),支持自定义[低功耗进入函数](#functions_hooks_zh_)
 
 + ✅ **外部中断**：按键采用外部中断触发，保证按键请求不会因轮询阻塞被忽略
 
@@ -59,19 +64,30 @@
 
 + ✅ **内存精简**：数据结构紧凑，内存占用少
 
-+ ✅ **立刻开始**：项目只有一个文件，仅需使用一个宏定义即可生成所需代码，注释详尽
-
 + ✅ **多编译器支持**：支持GCC与ArmCC等编译器
 
-+ ✅ **临界区保护**：多线程数据安全、不冲突
++ ✅ **临界区保护**：多线程数据安全、不冲突，理论支持操作系统
 
-+ ✅ **调试模式**：[开启](#enable_disable_options_ZN)调试模式后可以设置[错误钩子](#functions_hooks_ZN)，精准锁定异常
++ ✅ **调试模式**：[开启](#enable_disable_options_zh_)调试模式后可以设置[错误钩子](#functions_hooks_zh_)，精准锁定异常
 
 + ✅ **按键定制**：支持每个按键单独设置各个判定时间
 
 ### 使用方法：
 
 * 首先，假设我们有三个文件（`main.c` , `my_button.c` , `my_button.h` ）。其中，my_button.c 文件存放按键代码，my_button.h 文件存放必要的声明，main.c 调用代码。
+
+```
+.
+|
++-- kim_stm32_hal_button.h 本项目提供的头文件
+|
++-- my_button.c (#include "kim_stm32_hal_button.h") 用户自建文件，用于定义按键
+|
++-- my_button.h (#include "kim_stm32_hal_button.h") 用户自建文件，用于声明按键
+|
++-- main.c (#include "my_button.h") 用户自建文件，用于调用按键
+
+```
 
 * 然后，在 `my_button.c` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__REGISTER** 宏 来生成所需要的代码。（示例如下： 我的按钮触发时会在 **PA7** 产升**下降沿** 信号， 我想给按钮取名为**myButton**  ）
 
@@ -143,7 +159,7 @@ int main(void)
 //        如果没有使用 STM32CubeMX 生成对应中断代码，则需要在 EXTI?_IRQHandler()函数中调用(? 为0~4，9_5或15_10)
 //        下面演示两种写法
 
-// 写法一：
+// 第三处-写法一：
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
      /* ... 其他无关代码 ... */
@@ -155,7 +171,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
      /* ... 其他无关代码 ... */
 }
 
-// 写法二：（可以尝试在stm32_xxxx_it.c文件中找一下这个回调函数，如果没有就自己写）
+// 第三处-写法二：（可以尝试在stm32_xxxx_it.c文件中找一下这个回调函数，如果没有就自己写）
 void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 {
      /* ... 其他无关代码 ... */
@@ -169,11 +185,11 @@ void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
 }
 ```
 
-* 【可选功能】计时长按 <span id="long_push_timing_example_ZN"> </span>
+* 【可选功能】计时长按 <span id="long_push_timing_example_zh_"> </span>
 
 ```c
 /***** Macro to enable different long push time *****/
-// 找到这个宏，将它的值修改为 1
+// 找到这个宏，将它的值修改为 1，长按功能会升级为定时长按，长按回调函数将接收长按时间作为参数。
 #define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
 
 // 准备好带 uint32_t 参数的长按回调函数（名字随意）
@@ -218,7 +234,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】组合按键 <span id="combination_button_example_ZN"> </span>
+* 【可选功能】组合按键 <span id="combination_button_example_zh_"> </span>
   * 本项目支持简单的组合键，基本原理是为**当前按键**(button-[this])设置“前置按键”与“组合回调函数”。当前置按键处于按下状态时，按下**当前按键**触发组合回调函数。
 
 ```c
@@ -240,6 +256,8 @@ int main(void)
     // 假设我要设置组合键：在KEY1按下期间，KEY2按下并释放后会调用 CombinationCallBack
     // 以下配置必须在初始化函数之后
     Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // KEY2的前置按键是KEY1
+
+    // ！注意 组合键回调函数绑定在后按下的按键上！
     Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
 
     while(1)
@@ -267,7 +285,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
-* 【可选功能】多击按键 <span id="repeat_button_example_ZN"> </span>
+* 【可选功能】多击按键 <span id="repeat_button_example_zh_"> </span>
   * 开启该功能后，双击按键回调函数将变为多击按键回调函数，类型由 `void (*)(void)` 变为 `void (*)(uint8_t)` 。该参数会接收多击按键次数（2 ~ 7次）。示例如下：
 
 ```c
@@ -294,7 +312,7 @@ void repeat_push_callback(uint8_t push_time)
 
 ```
 
-* 【可选功能】低功耗 <span id="low_power_example_ZN"> </span>
+* 【可选功能】低功耗 <span id="low_power_example_zh_"> </span>
 
 ```c
 
@@ -355,14 +373,14 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 * 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。这些宏选项有以下几个部分：
   
-  * [头文件选择](#header_file_choice_ZN)
-  * [时间设置](#time_config_ZN)
-  * [中断优先级设置](#NVIC_priority_ZN)
-  * [启动/禁用-选项](#enable_disable_options_ZN)
-  * [函数与钩子](#functions_hooks_ZN)
-  * [名字空间/命名前缀](#namespace_nameprefix_ZN)
+  * [头文件选择](#header_file_choice_zh_)
+  * [时间设置](#time_config_zh_)
+  * [中断优先级设置](#NVIC_priority_zh_)
+  * [启动/禁用-选项](#enable_disable_options_zh_)
+  * [函数与钩子](#functions_hooks_zh_)
+  * [名字空间/命名前缀](#namespace_nameprefix_zh_)
 
-* **头文件选择** <span id="header_file_choice_ZN"> </span>
+* **头文件选择** <span id="header_file_choice_zh_"> </span>
   
   * 根据芯片型号选择合适的头文件，取消对应的注释。
 
@@ -381,7 +399,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **时间设置** <span id="time_config_ZN"> </span>
+* **时间设置** <span id="time_config_zh_"> </span>
   * 设置各个时间参数，作为**默认值**（每个按键可以分别动态修改）
 
 ```c
@@ -413,9 +431,12 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 // 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
 
+// 组合键的前置按键的最大按下保持时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
+#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
+
 ```
 
-* **中断优先级设置** <span id="NVIC_priority_ZN"> </span>
+* **中断优先级设置** <span id="NVIC_priority_zh_"> </span>
   * 设置对应的中断优先级。如果使能了 KIM_BUTTON_STM32CUBEMX_GENERATE_* 宏选项，该参数无效。
 
 ```c
@@ -439,7 +460,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **启动/禁用-选项** <span id="enable_disable_options_ZN"> </span>
+* **启动/禁用-选项** <span id="enable_disable_options_zh_"> </span>
   * 设置下面这些宏定义的值(0/1)，可以使能或失能对应功能/模式。
 
 ```c
@@ -485,7 +506,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **函数与钩子** <span id="functions_hooks_ZN"> </span>
+* **函数与钩子** <span id="functions_hooks_zh_"> </span>
   * 设置下面这些宏函数，定制代码行为。例如自定义的 DEBUG_ERROR_HOOK 可在调试模式出现异常时被调用。
 
 ```c
@@ -523,7 +544,7 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ```
 
-* **名字空间-命名前缀** <span id="namespace_nameprefix_ZN"> </span>
+* **名字空间-命名前缀** <span id="namespace_nameprefix_zh_"> </span>
   * 自定义设置暴露(extern)的内容的命名前缀，包括按键名前缀和初始化函数前缀。
 
 ```c
@@ -552,9 +573,93 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ### 状态机图解
 
-* **正常电平**指的是按键未被按下时的电平
+```mermaid
 
-![State-Machine](./picture/State-Machine.png)
+stateDiagram-v2
+    [*] --> Wait_For_Interrupt
+    
+    %% 核心状态转换流程
+    Wait_For_Interrupt --> Push_Delay: 中断触发(引脚电平变化)
+    Push_Delay --> Wait_For_End: 40ms后**确认按下**
+    Push_Delay --> Wait_For_Interrupt: 40ms后**发现是误触发**
+    Wait_For_End --> Release_Delay: 引脚释放
+    Release_Delay --> Wait_For_Repeat: 40ms后**确认释放**
+    Wait_For_Repeat --> Repeat_Push: 300ms内再次按下
+    Wait_For_Repeat --> Single_Push: 300ms超时
+    Repeat_Push --> Cool_Down: 执行 双击/计数多击 回调
+    Single_Push --> Cool_Down: 执行 短按、长按/计时长按 回调
+    Cool_Down --> Wait_For_Interrupt: 冷却时间结束
+    
+    %% 组合键状态转换（可选）
+    Wait_For_End --> Combination_WaitForEnd: 作为**前置按键**时，后置按键被按下
+    Combination_WaitForEnd --> Combination_Release: 组合键释放
+    Combination_Release --> Combination_WaitForEnd: 40ms后仍按下
+    Combination_Release --> Cool_Down: 40ms后**确认释放**
+    Cool_Down --> Combination_Release: 40ms后**发现未释放**
+    Release_Delay --> Combination_Push: 组合键触发
+    Combination_Push --> Cool_Down: 执行 组合键 回调
+    
+    %% 错误处理/安全机制
+    Wait_For_End --> Wait_For_Interrupt: 按下超时60秒
+    Combination_WaitForEnd --> Wait_For_Interrupt: 按下超时60秒
+    
+    %% 状态说明
+    note left of Wait_For_Interrupt
+        初始/空闲状态
+        等待中断触发
+    end note
+    
+    note right of Push_Delay
+        按下消抖状态
+        持续40ms
+    end note
+    
+    note right of Wait_For_End
+        等待释放状态
+        监测引脚状态
+    end note
+    
+    note right of Release_Delay
+        释放消抖状态
+        持续40ms
+    end note
+    
+    note right of Wait_For_Repeat
+        等待重复按键
+        持续300ms
+    end note
+    
+    note right of Repeat_Push
+        重复按键触发
+        执行多击回调
+    end note
+    
+    note right of Single_Push
+        单次按键触发
+        执行短按/长按回调
+    end note
+    
+    note left of Cool_Down
+        冷却状态
+        可配置冷却时间
+    end note
+    
+    note right of Combination_WaitForEnd
+        组合键等待结束
+        监测前置按键状态
+    end note
+    
+    note left of Combination_Release
+        组合键释放检测
+        持续40ms
+    end note
+    
+    note left of Combination_Push
+        组合键触发
+        执行组合键回调
+    end note
+
+```
 
 - [返回顶部](#stm32-simplebutton)
   
@@ -562,17 +667,17 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 
 ## English <span id="english"> </span>
 
-(PS: Because of the machine translation, you may see words "key" and "button". They mean the same in this project.)
+(PS: *Because of the machine translation, you may see words "key" and "button". They mean the same in this project.*)
 
 ### Brief introduction:
-
-* This project contains only one file, namely `kim_stm32_hal_button.h` . All the required code can be generated simply by using one macro definition.
   
 #### New Features(Version-0.2.0):
 
 + 🛠 **Fix low-power entry function**: Make low power consumption partially atomized to avoid the risk of incorrect sleep 
 
 #### Existing Features:
+
++ ✅ **Header-only**: just include `kim_stm32_hal_button.h`, no `.c` file needed
 
 + ✅ **Rich Press Event**: Supports short-push, long-push/[timing-long-push](#long_push_timing_example)[[ENABLE](#enable_disable_options)], double-push/[repeat-counter-push](#repeat_button_example)[[ENABLE](#enable_disable_options)], [button-combination](#combination_button_example)[[ENABLE](#enable_disable_options)]
 
@@ -587,8 +692,6 @@ Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击�
 + ✅ **Zero Overhead**: For features that are not used (such as combination buttons), no additional overhead is incurred
 
 + ✅ **Memory Reduction**: The data structure is compact and the memory usage is low
-
-+ ✅ **Start Now**: The project has **only one file**, and only one macro definition is needed to generate the required code, with detailed comments
 
 + ✅ **Support Multiple Compilers**: It supports GCC and ArmCC compilers
 
@@ -937,8 +1040,11 @@ Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-c
 // CD time for button
 #define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
 
-// Press the maximum holding time. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+// The maximum holding time for normal long push. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
 #define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
+
+// The maximum holding time for [front(before)]-button of "combination button". Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
+#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
 
 ```
 
