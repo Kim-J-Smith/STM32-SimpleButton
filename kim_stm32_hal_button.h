@@ -14,7 +14,7 @@
  *                  All rights reserved.
  * 
  * @copyright       This project complies with the MIT License.
- *                  Refer to the LICENCE in root for more details.
+ *                  Refer to the LICENCE file in root for more details.
  *                  <https://github.com/Kim-J-Smith/STM32-SimpleButton>
  */
 # include <stdint.h>
@@ -991,59 +991,60 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     switch ((enum Kim_Button_State)self->private_state) 
     {
 
-    case Kim_Button_State_Wait_For_Interrupt:
+    case Kim_Button_State_Wait_For_Interrupt: {
         Kim_Button_PrivateUse_StateWFIHandler();
         break;
-
-    case Kim_Button_State_Push_Delay:
+    }
+    case Kim_Button_State_Push_Delay: {
         Kim_Button_PrivateUse_StatePushDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Wait_For_End:
+    }
+    case Kim_Button_State_Wait_For_End: {
         Kim_Button_PrivateUse_StateWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Repeat_Push:
+    }
+    case Kim_Button_State_Repeat_Push: {
         Kim_Button_PrivateUse_StateRepeatPushHandler(self, repeat_push_callback);
         break;
-
-    case Kim_Button_State_Wait_For_Repeat:
+    }
+    case Kim_Button_State_Wait_For_Repeat: {
         Kim_Button_PrivateUse_StateWFRHandler(self);
         break;
-
-    case Kim_Button_State_Single_Push:
+    }
+    case Kim_Button_State_Single_Push: {
         Kim_Button_PrivateUse_StateSiglePushHandler(self, short_push_callback, long_push_callback);
         break;
-
-    case Kim_Button_State_Release_Delay:
+    }
+    case Kim_Button_State_Release_Delay: {
         Kim_Button_PrivateUse_StateReleaseDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Cool_Down:
+    }
+    case Kim_Button_State_Cool_Down: {
         Kim_Button_PrivateUse_StateCoolDownHandler(self);
         break;
-
+    }
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
-    case Kim_Button_State_Combination_Push:
+    case Kim_Button_State_Combination_Push: {
         Kim_Button_PrivateUse_StateCombinationPushHandler(self);
         break;
-
-    case Kim_Button_State_Combination_WaitForEnd:
+    }
+    case Kim_Button_State_Combination_WaitForEnd: {
         Kim_Button_PrivateUse_StateCombinationWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Combination_Release:
+    }
+    case Kim_Button_State_Combination_Release: {
         Kim_Button_PrivateUse_StateCombinationReleaseHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
+    }
 #endif /* button combination */
 
-    default:
+    default: {
         Kim_Button_PrivateUse_StateDefaultHandler();
         break;
-
     }
+
+    } /* end-switch */
 
     /* Critical Zone End */
     KIM_BUTTON_CRITICAL_ZONE_END(); 
@@ -1511,7 +1512,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
     struct Kim_Button_TypeDef                                                   \
-        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name) = {0};                \
+        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name) = {0};               \
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \
