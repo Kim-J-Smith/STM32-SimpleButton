@@ -72,7 +72,7 @@
 /***** Macro to enable button combination *****/
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
-/***** Macro to enable button repeat(2 ~ 7) *****/
+/***** Macro to enable button repeat(2 ~ 15) *****/
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /** @p ------------------------------------------------------------- */
@@ -223,10 +223,7 @@ struct Kim_Button_TypeDef {
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
 
     /** @p [private] This member variable is used to record how many times you push the button(0 ~ 7). */
-    uint8_t                                         private_push_time : 3;
-
-    /** @p [private] This member variable is used to record the state of initialization. */
-    uint8_t                                         private_is_init : 1;
+    uint8_t                                         private_push_time : 4;
 };
 
 #ifdef __cplusplus
@@ -337,9 +334,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitStructSelf(
     void (* method_interrupt_handler) (void)
 )
 {
-    /* Initialize only once */
-    self->private_is_init = 1;
-
     /* Initialize the member variables */
     self->private_push_time = 0;
     self->private_time_stamp_loop = 0;
@@ -417,15 +411,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     void (* method_interrupt_handler) (void)
 )
 {
-    /* Check whether it is first time to init */
-    if(self->private_is_init != 0) {
-#if defined(KIM_BUTTON_DEBUG)
-        KIM_BUTTON_DEBUG_ERROR_HOOK();
-#else
-        return;
-#endif /* Debug Mode */
-    }
-
     /* Initialize the struct self */
     Kim_Button_PrivateUse_InitStructSelf(
         self,
@@ -614,7 +599,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateReleaseDela
             self->private_state = (self->private_push_time == 1)
                 ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
 #else
-            self->private_state = (self->private_push_time < 7)
+            self->private_state = (self->private_push_time < 15)
                 ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
 #endif /* more repeat */
 
