@@ -3,3 +3,5 @@
 
 // 进行按键的声明 Do button declaration
 KIM_BUTTON__DECLARE(myBtn0)
+
+

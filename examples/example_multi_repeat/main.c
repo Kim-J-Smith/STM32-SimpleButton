@@ -1,38 +1,25 @@
-# include "stm32f1xx_hal.h"
-# include "example_min.h"
+# include "example_multi_repeat.h"
 
-
-// 无参，无返回值。 No parameter, no return value.
-void Btn_Short_Press_Handler(void)
-{
-    /* 按键短按处理函数 short press handler */
-}
-
-// 无参，无返回值。 No parameter, no return value.
-void Btn_Long_Press_Handler(void)
-{
-    /* 按键长按处理函数 long press handler */
-}
-
-// 无参，无返回值。 No parameter, no return value.
-void Btn_Repeat_Press_Handler(void)
+// 有参，无返回值。No return value, only one parameter.
+void Btn_Repeat_Press_Handler(uint8_t repeat_times)
 {
     /* 按键重复按处理函数 repeat press handler */
+
+    /* repeat_times 表示按键被按了几次 */
+    /* repeat_times indicates how many times the button is pressed */
 }
 
 int main(void)
 {
     HAL_Init();
-    SystemClock_Config();
+    SystemClock_Config();   
 
-    // 初始化按键 Initialize the button
     Kim_Button_Init_myBtn0();
     while(1)
     {
-        // 调用按键的异步处理函数 call the asynchronous handler of the button
         Kim_Button_myBtn0.method_asynchronous_handler(
-            Btn_Short_Press_Handler,
-            Btn_Long_Press_Handler,
+            NULL,
+            NULL,
             Btn_Repeat_Press_Handler    
         );
     }
@@ -60,5 +47,4 @@ void EXTI0_IRQHandler(void)
         __HAL_GPIO_EXTI_CLEAR_IT();
     }
 }
-
 
