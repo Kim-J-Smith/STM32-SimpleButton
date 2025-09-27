@@ -1,29 +1,18 @@
-# include "example_multi_repeat.h"
+# include "example_timer_long_push.h"
 
-// 有参，无返回值。No return value, only one parameter.
-void Btn_Repeat_Press_Handler(uint8_t repeat_times)
+void Btn_Long_Press_Handler(uint32_t long_press_time)
 {
-    /* 按键重复按处理函数 repeat press handler */
-
-    /* repeat_times 表示按键被按了几次 */
-    /* repeat_times indicates how many times the button is pressed */
-    switch (repeat_times)
-    {
-    case 2:
-        /* do somthing when push 2 times */
-        break;
-    case 3:
-        /* do somthing when push 3 times */
-        break;
-    case 4:
-        /* do somthing when push 4 times */
-        break;
-    case 5:
-        /* do somthing when push 5 times */
-        break;
-    /* ... */
-    default:
-        break;
+    /* 按键长按处理函数 long press handler */
+    
+    /* long_press_time 表示按键被按了多长时间 */
+    /* long_press_time indicates how long the button is pressed */
+    
+    if(long_press_time < 5000) {
+        /* do somthing when push less than 5s */
+    } else if (long_press_time < 10000) {
+        /* do somthing when push less than 10s */
+    } else {
+        /* do somthing when push more than 10s */
     }
 }
 
@@ -33,12 +22,18 @@ int main(void)
     SystemClock_Config();   
 
     Kim_Button_Init_myBtn0();
+
+    /* 可以为每个按键单独设置冷却时间、最小长按时间、最大重复按判定时间 */
+
+    Kim_Button_myBtn0.public_cool_down_time = 1000; // 冷却1秒
+    Kim_Button_myBtn0.public_long_push_min_time = 2000; // 两秒以上才判定为长按
+    Kim_Button_myBtn0.public_repeat_push_max_time = 0; // 不等待重复按判定
     while(1)
     {
         Kim_Button_myBtn0.method_asynchronous_handler(
             NULL,
-            NULL,
-            Btn_Repeat_Press_Handler    
+            Btn_Long_Press_Handler,
+            NULL    
         );
     }
 }
@@ -65,4 +60,3 @@ void EXTI0_IRQHandler(void)
         __HAL_GPIO_EXTI_CLEAR_IT();
     }
 }
-
