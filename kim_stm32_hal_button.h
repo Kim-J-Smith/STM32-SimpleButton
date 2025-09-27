@@ -5,7 +5,7 @@
  * 
  * @brief           Kim Library to offer a template for button [STM32 HAL]
  * 
- * @version         0.2.0s ( 0017L )
+ * @version         0.2.0s+ ( 0018L )
  *                  (match with stm32fxxx_hal.h or stm32hxxx_hal.h)
  * 
  * @date            2025-08-26
@@ -14,13 +14,13 @@
  *                  All rights reserved.
  * 
  * @copyright       This project complies with the MIT License.
- *                  Refer to the LICENCE in root for more details.
+ *                  Refer to the LICENCE file in root for more details.
  *                  <https://github.com/Kim-J-Smith/STM32-SimpleButton>
  */
 # include <stdint.h>
 
 #ifndef     KIM_STM32_HAL_BUTTON_H
-#define     KIM_STM32_HAL_BUTTON_H      0017L
+#define     KIM_STM32_HAL_BUTTON_H      0018L
 
 /* ============ Users can customize these by themselves ============ */
 
@@ -86,7 +86,7 @@
 /***** Macro to enable button combination *****/
 #define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
 
-/***** Macro to enable button repeat(2 ~ 7) *****/
+/***** Macro to enable button repeat(2 ~ 15) *****/
 #define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
 
 /** @p ------------------------------------------------------------- */
@@ -237,10 +237,7 @@ struct Kim_Button_TypeDef {
     volatile ENUM_BITFIELD (enum Kim_Button_State)  private_state : 4;
 
     /** @p [private] This member variable is used to record how many times you push the button(0 ~ 7). */
-    uint8_t                                         private_push_time : 3;
-
-    /** @p [private] This member variable is used to record the state of initialization. */
-    uint8_t                                         private_is_init : 1;
+    uint8_t                                         private_push_time : 4;
 };
 
 #ifdef __cplusplus
@@ -412,9 +409,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitStructSelf(
     void (* method_interrupt_handler) (void)
 )
 {
-    /* Initialize only once */
-    self->private_is_init = 1;
-
     /* Initialize the member variables */
     self->private_push_time = 0;
     self->private_time_stamp_loop = 0;
@@ -641,15 +635,6 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_InitButton(
     void (* method_interrupt_handler) (void)
 )
 {
-    /* Check whether it is first time to init */
-    if(self->private_is_init != 0) {
-#if defined(KIM_BUTTON_DEBUG)
-        KIM_BUTTON_DEBUG_ERROR_HOOK();
-#else
-        return;
-#endif /* Debug Mode */
-    }
-
     /* Initialize the struct self */
     Kim_Button_PrivateUse_InitStructSelf(
         self,
@@ -841,7 +826,7 @@ KIM_BUTTON_PRIVATE_FUNC_FORCE_INLINE void Kim_Button_PrivateUse_StateReleaseDela
             self->private_state = (self->private_push_time == 1)
                 ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
 #else
-            self->private_state = (self->private_push_time < 7)
+            self->private_state = (self->private_push_time < 15)
                 ? Kim_Button_State_Wait_For_Repeat : Kim_Button_State_Repeat_Push;
 #endif /* more repeat */
 
@@ -991,59 +976,60 @@ KIM_BUTTON_PRIVATE_FUNC_SUGGEST_INLINE void Kim_Button_PrivateUse_AsynchronousHa
     switch ((enum Kim_Button_State)self->private_state) 
     {
 
-    case Kim_Button_State_Wait_For_Interrupt:
+    case Kim_Button_State_Wait_For_Interrupt: {
         Kim_Button_PrivateUse_StateWFIHandler();
         break;
-
-    case Kim_Button_State_Push_Delay:
+    }
+    case Kim_Button_State_Push_Delay: {
         Kim_Button_PrivateUse_StatePushDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Wait_For_End:
+    }
+    case Kim_Button_State_Wait_For_End: {
         Kim_Button_PrivateUse_StateWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Repeat_Push:
+    }
+    case Kim_Button_State_Repeat_Push: {
         Kim_Button_PrivateUse_StateRepeatPushHandler(self, repeat_push_callback);
         break;
-
-    case Kim_Button_State_Wait_For_Repeat:
+    }
+    case Kim_Button_State_Wait_For_Repeat: {
         Kim_Button_PrivateUse_StateWFRHandler(self);
         break;
-
-    case Kim_Button_State_Single_Push:
+    }
+    case Kim_Button_State_Single_Push: {
         Kim_Button_PrivateUse_StateSiglePushHandler(self, short_push_callback, long_push_callback);
         break;
-
-    case Kim_Button_State_Release_Delay:
+    }
+    case Kim_Button_State_Release_Delay: {
         Kim_Button_PrivateUse_StateReleaseDelayHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Cool_Down:
+    }
+    case Kim_Button_State_Cool_Down: {
         Kim_Button_PrivateUse_StateCoolDownHandler(self);
         break;
-
+    }
 #if KIM_BUTTON_ENABLE_BUTTON_COMBINATION != 0
 
-    case Kim_Button_State_Combination_Push:
+    case Kim_Button_State_Combination_Push: {
         Kim_Button_PrivateUse_StateCombinationPushHandler(self);
         break;
-
-    case Kim_Button_State_Combination_WaitForEnd:
+    }
+    case Kim_Button_State_Combination_WaitForEnd: {
         Kim_Button_PrivateUse_StateCombinationWFEHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
-    case Kim_Button_State_Combination_Release:
+    }
+    case Kim_Button_State_Combination_Release: {
         Kim_Button_PrivateUse_StateCombinationReleaseHandler(self, gpiox_base, gpio_pin_x, Normal_Bit_Val);
         break;
-
+    }
 #endif /* button combination */
 
-    default:
+    default: {
         Kim_Button_PrivateUse_StateDefaultHandler();
         break;
-
     }
+
+    } /* end-switch */
 
     /* Critical Zone End */
     KIM_BUTTON_CRITICAL_ZONE_END(); 
@@ -1511,7 +1497,7 @@ uint32_t Kim_Button_PrivateUse_AllIsWFI_16(
  */
 #define KIM_BUTTON__REGISTER(GPIOx_BASE, GPIO_PIN_X, EXTI_TRIGGER_X, __name)    \
     struct Kim_Button_TypeDef                                                   \
-        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX,__name) = {0};                \
+        KIM_BUTTON_CONNECT(KIM_BUTTON_NAME_PREFIX, __name) = {0};               \
                                                                                 \
     static void                                                                 \
     KIM_BUTTON_CONNECT(Kim_Button_Asynchronous_Handler_, __name)(               \

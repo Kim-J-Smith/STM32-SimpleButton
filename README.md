@@ -54,7 +54,7 @@
 
 + ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
 
-+ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_zh_),支持自定义[低功耗进入函数](#functions_hooks_zh_)
++ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_zh_)，支持自定义[低功耗进入函数](#functions_hooks_zh_)
 
 + ✅ **外部中断**：按键采用外部中断触发，保证按键请求不会因轮询阻塞被忽略
 
@@ -697,15 +697,28 @@ stateDiagram-v2
 
 + ✅ **Critical Section Protection**: Multi-threaded data is secure and conflict-free
 
-+ ✅ **DEBUG Mode**: After enabling the debug mode, error hooks can be set to precisely lock onto anomalies
++ ✅ **DEBUG Mode**: After enabling the debug mode, error hooks can be set in order to precisely lock onto exceptions(errors)
 
-+ ✅ **Customized Buttons**: Support setting each judgment time separately for each button
++ ✅ **Customized Buttons**: Support setting each judgment time(such as cool down time) separately for each button
 
 ### How to use: 
 
 * First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the button codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
 
-* Then, in `my_button.c`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: When my button is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
+```
+.
+|
++-- kim_stm32_hal_button.h  // The header file provided by STM32-SimpleButton
+|
++-- my_button.c (#include "kim_stm32_hal_button.h") // User-created files are used to define keys
+|
++-- my_button.h (#include "kim_stm32_hal_button.h") // Users create their own files to declare keys
+|
++-- main.c (#include "my_button.h") // Users create their own files to use the keys
+
+```
+
+* Then, in `my_button.c`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: Assuming that there is a button, when it is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
   
   ```c
   /* The following is the content of my_button.c */ 
@@ -717,7 +730,7 @@ stateDiagram-v2
   
   
 
-* Next, in `my_button.h`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name must be defined by the **KIM_BUTTON__REGISTER** macro)
+* Next, in `my_button.h`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name **must** be defined by the **KIM_BUTTON__REGISTER** macro)
   
   ```c
   /* The following is the content of my_button.h */ 
