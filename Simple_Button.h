@@ -201,39 +201,39 @@ void simpleButton_Private_InitEXTI(
         __HAL_RCC_GPIOE_CLK_ENABLE();
         break;
  #if defined(GPIOF_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOF_CLK_ENABLE();
         break;
  #endif /* GPIOF_BASE */
  #if defined(GPIOG_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOG_CLK_ENABLE();
         break;
  #endif /* GPIOG_BASE */
  #if defined(GPIOH_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOH_CLK_ENABLE();
         break;
  #endif /* GPIOH_BASE */
  #if defined(GPIOI_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOI_CLK_ENABLE();
         break;
  #endif /* GPIOI_BASE */
  #if defined(GPIOJ_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOJ_CLK_ENABLE();
         break;
  #endif /* GPIOJ_BASE */
  #if defined(GPIOK_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOK_CLK_ENABLE();
         break;
  #endif /* GPIOK_BASE */
  #if defined(GPIOL_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOL_CLK_ENABLE();
         break;
  #endif /* GPIOL_BASE */
  #if defined(GPIOM_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPIOM_CLK_ENABLE();
         break;
  #endif /* GPIOM_BASE */
  #if defined(GPION_BASE)
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        __HAL_RCC_GPION_CLK_ENABLE();
         break;
  #endif /* GPION_BASE */
     default:
