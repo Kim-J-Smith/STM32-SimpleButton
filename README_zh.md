@@ -4,7 +4,9 @@
 
 ---
 
-*本项目基于[Simple-Button](https://github.com/Kim-J-Smith/Simple-Button) 0.0.1*
+*本项目基于[Simple-Button](https://github.com/Kim-J-Smith/Simple-Button) 的 0.0.1 版本*
+
+*本项目当前版本号为：0.3.0*
 
 ---
 

@@ -315,8 +315,8 @@ void simpleButton_Private_InitEXTI(
     }
     HAL_NVIC_SetPriority(
         the_exti_IRQ, 
-        KIM_BUTTON_NVIC_EXTI_PreemptionPriority,
-        KIM_BUTTON_NVIC_EXTI_SubPriority
+        SIMPLEBTN_CUBEMX_NVIC_EXTI_PreemptionPriority,
+        SIMPLEBTN_CUBEMX_NVIC_EXTI_SubPriority
     );
     HAL_NVIC_EnableIRQ(the_exti_IRQ);
 
