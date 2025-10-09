@@ -6,7 +6,7 @@
 
 *This project is based on version-0.0.1 of [Simple-Button](https://github.com/Kim-J-Smith/Simple-Button)*
 
-*The current version of the project is: 0.3.0*
+*The current version of the project is: 0.3.1*
 
 ---
 

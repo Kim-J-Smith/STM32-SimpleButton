@@ -6,7 +6,7 @@
  * @brief           A template for the button is provided [STM32 HAL]
  * 
  * @version         Simple-Button       0.0.1 ( SIMPLEBUTTON_H__ == 0001L )
- *                  STM32-SimpleButton  0.3.0 ( SIMPLEBUTTON_STM32HAL_VERSION == 00101L )
+ *                  STM32-SimpleButton  0.3.1 ( SIMPLEBUTTON_STM32HAL_VERSION == 00102L )
  * 
  * @date            2025-10-03
  * 
@@ -22,7 +22,7 @@
 #ifndef     SIMPLEBUTTON_H__
 #define     SIMPLEBUTTON_H__    0001L
 
-#define     SIMPLEBUTTON_STM32HAL_VERSION   00101L
+#define     SIMPLEBUTTON_STM32HAL_VERSION   00102L
 #include    <stdint.h>
 
 /** @p ================================================================ **/
@@ -119,17 +119,17 @@ typedef uint32_t            simpleButton_Type_EXTITrigger_t;
     // Enable debug mode if this macro is defined as 1.
 #define SIMPLEBTN_MODE_ENABLE_DEBUG                     1
     // Enable combination mode if this macro is defined as 1.
-#define SIMPLEBTN_MODE_ENABLE_COMBINATION               1
+#define SIMPLEBTN_MODE_ENABLE_COMBINATION               0
     // Enable timer long-push mode if this macro is defined as 1.
-#define SIMPLEBTN_MODE_ENABLE_TIMER_LONG_PUSH           1
+#define SIMPLEBTN_MODE_ENABLE_TIMER_LONG_PUSH           0
     // Enable counter repeat-push mode if this macro is defined as 1.
-#define SIMPLEBTN_MODE_ENABLE_COUNTER_REPEAT_PUSH       1
+#define SIMPLEBTN_MODE_ENABLE_COUNTER_REPEAT_PUSH       0
     // Enable only-use-default-time mode if this macro is defined as 1.
 #define SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME         0
     // Enable multi-threads mode(enable this only when you do use multi-thread) if this macro is defined as 1.
-#define SIMPLEBTN_MODE_ENABLE_MULTI_THREADS             1
+#define SIMPLEBTN_MODE_ENABLE_MULTI_THREADS             0
     // Enable long-push-hold mode if this macro is defined as 1.
-#define SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD             1
+#define SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD             0
 
 /** @b ================================================================ **/
 /** @b Namespace */
