@@ -1,1200 +1,604 @@
 # STM32-SimpleButton
-
-**Simple** and tiny STM32 key(button) frame, compatible with the STM32 HAL library, which offer **short-press/long-press/repeat-press/combination-press** for each button, non-blocking.
-
-一个仅含头文件的STM32按键框架，**5行代码**完成按键部署，适配STM32 HAL库，支持每个按键独立的 **短按/长按/多击/组合键**，支持**多线程**、**低功耗**，采用外部中断加循环内异步处理，非阻塞状态机。
+[English](./README.md)
+[中文](./README_zh.md)
 
 ---
 
-## VERSION  -  *0.2.0s-Stable*
+*This project is based on version-0.0.1 of [Simple-Button](https://github.com/Kim-J-Smith/Simple-Button)*
+
+*The current version of the project is: 0.3.0*
 
 ---
 
-- [STM32-SimpleButton](#stm32-simplebutton)
+## Contents
 
-  - [中文](#chinese)
-    - [简介：](#简介)
-      - [新增功能特性(版本-0.2.0)：](#新增功能特性版本-020)
-      - [已有功能特性：](#已有功能特性)
-    - [使用方法：](#使用方法)
-    - [动态设置：](#动态设置)
-    - [注意事项：](#注意事项)
-    - [自定义选项（宏）：](#自定义选项宏)
-    - [状态机图解](#状态机图解)
+- [Contents](#contents)
 
-  - [English](#english)
-    - [Brief introduction:](#brief-introduction)
-      - [New Features(Version-0.2.0):](#new-featuresversion-020)
-      - [Existing Features:](#existing-features)
-    - [How to use:](#how-to-use)
-    - [Dynamic settings:](#dynamic-settings)
-    - [Note：](#note)
-    - [Customizable options (Macro):](#customizable-options-macro)
+- [Brief Introduction](#brief-introduction)
+    - [Brief instruction of design](#brief-instruction-of-design)
+    - [Brief introduction of the feature](#brief-introduction-of-the-feature)
 
+- [Usage](#usage)
+    - [Overview](#overview)
+    - [Detailed Step](#detailed-steps)
+        - [Step 1](#step-1)
+        - [Step 2](#step-2)
 
-  - [START NOW 立刻开始](#start-now-立刻开始)
+- [Advanced features](#advanced-features)
+    - [Timer Long Push](#timer-long-push)
+    - [Counter Pepeat Push](#counter-repeat-push)
+    - [Long Push Hold](#long-push-hold)
+    - [Button Combination](#button-combinations)
+    - [Low Power](#low-power)
+    - [Adjustable Time](#adjustable-time)
+    - [Namespace](#name-prefixesnamespaces)
+
+- [State Machine Graph](#state-machine-graph)
+
+- [Low Power Design](#low-power-design)
+
+- [Derivative Projects](#derivative-project)
 
 ---
 
-## Chinese <span id="chinese"> </span>
+## Brief Introduction
 
+### Brief instruction of design
 
+- Buttons are the simplest, most common, and most effective input in embedded design. There are quite a few mature open source projects with buttons on GitHub today, but I still see a lot of problems that these projects don't address: *Some projects don't support long-hold buttons, some don't support multi-click buttons, some don't support low power, and some have complex API*. (**The lack of low power support is a consequence of the project's use of polling instead of interrupts!**)
 
-### 简介：
-  
-#### 新增功能特性(版本-0.2.0)：
+- There are a lot of projects that use polling because it has a natural advantage: users only need to implement the `Read_Pin()` functional interface to use polling, which is very portable; But polling comes with a natural drawback: the CPU must be working all the time to keep scanning, **which is the natural contradiction of low power** !
 
-+ 🛠 **修复低功耗进入函数临界区**：使得低功耗进入部分原子化，规避错误休眠风险
+- I got the idea to make my own non-polling button project. The project should have the following characteristics:
 
-#### 已有功能特性：
+- 1. **Comprehensive Feature** - "Comprehensive" means: at least supporting *short press, long press, timer long press, double push, counter multiple push, combination buttons, and long press hold*.
+- 2. **Simple Deployment** - "Simple" means: providing only __ONE__ interface for creating buttons, and one line of code can register(create) a button statically.
+- 3. **Use State Machine** - The purpose is: To achieve non-blocking debouncing while having high scalability and a clear hierarchical structure. Different from similar [lwbtn](https://github.com/MaJerle/lwbtn) that incident reporting mechanism, although the traditional state machine will lead to state sort is more, but easy to debug and add a new state.
+- 4. **Use EXTI** - The purpose is: Using interrupts instead of polling is beneficial for *low power consumption* support.
 
-+ ✅ **仅含头文件**：该项目仅含`kim_stm32_hal_button.h`一个头文件，不含任何`.c`文件
+- So, after comprehensive consideration, I chose to **use C language macros to simulate the generation of functions similar to C++ templates**. Users only need to use the provided template to create a button object (which is actually a structure and three functions) with just one line of code.
 
-+ ✅ **按键事件完善**：支持 短按、长按/[计时长按](#long_push_timing_example_zh_)[[开启](#enable_disable_options_zh_)]、双击/[计数多击](#repeat_button_example_zh_)[[开启](#enable_disable_options_zh_)]、[组合键](#combination_button_example_zh_)[[开启](#enable_disable_options_zh_)]
+- Except for the initialization function which needs to be explicitly called, the calling methods of the other two functions are similar to the "methods" in C++. This is my attempt to implementing OOP using the C language.
 
-+ ✅ **状态机**：非阻塞软件消抖，对引脚状态二次确认，异步处理代码
+### Brief introduction of the feature
 
-+ ✅ **低功耗支持**：支持按键空闲时进入[低功耗模式](#low_power_example_zh_)，支持自定义[低功耗进入函数](#functions_hooks_zh_)
+- **Under the guidance of the [Design Concept](#brief-instruction-of-design), this project has implemented a pure C language button project based on the C99 standard (or C++11 standard).**
 
-+ ✅ **外部中断**：按键采用外部中断触发，保证按键请求不会因轮询阻塞被忽略
+1. ✅ **Comprehensive Features** : This project currently supports *short press, long press, timer long press, double push, counter multiple push, combination buttons, and long press hold*.
 
-+ ✅ **动态回调**：每个按键短按、长按/计时长按、双击/计数多击支持独立的回调函数动态注册，回调函数允许为空
+2. ✅ **State Machine** : This project uses a state machine for code organization, which has strong scalability. However, users can use it easily without having to understand the details of the state machine.
 
-+ ✅ **零开销原则**：对于没有使用的特性(例如组合键)，不产生任何额外的开销
+3. ✅ **External Interrupt(EXTI)** : This project uses an external interrupt(EXTI) trigger button, *naturally supporting low power consumption*. The project also provides a line of code to determine and enter a low-power interface.
 
-+ ✅ **内存精简**：数据结构紧凑，内存占用少
+4. ✅ **Asynchronous Processing** : The callback function is processed asynchronously to reduce the interrupt dwell time.
 
-+ ✅ **多编译器支持**：支持GCC与ArmCC等编译器
+4. ✅ **Secondary Confirmation** : This project performs secondary confirmation on the pin trigger signal, thereby supporting pins who have the same number in GPIOX to be used as button pins simultaneously, eliminating concerns about external interrupt conflicts.
 
-+ ✅ **临界区保护**：多线程数据安全、不冲突，理论支持操作系统
+5. ✅ **Adjustable Time** : This project supports setting the *minimum time for long press determination, multi-click window time, and cooldown time* for each button separately, making it convenient for button customization.
 
-+ ✅ **调试模式**：[开启](#enable_disable_options_zh_)调试模式后可以设置[错误钩子](#functions_hooks_zh_)，精准锁定异常
+6. ✅ **Multi-threading Safety** : This project supports enabling (multi-threading mode)[] to ensure multi-threading safety.
 
-+ ✅ **按键定制**：支持每个按键单独设置各个判定时间
+7. ✅ **Debugging Support** : This project supports enabling (debugging mode)[] to locate anomalies, facilitating secondary development of the project.
 
-### 使用方法：
+[Back to Contents](#contents)
 
-* 首先，假设我们有三个文件（`main.c` , `my_button.c` , `my_button.h` ）。其中，my_button.c 文件存放按键代码，my_button.h 文件存放必要的声明，main.c 调用代码。
+---
 
-```
+## Usage
+
+### Overview
+
+- This project is based on [Simple-Button](https://github.com/Kim-J-Smith/Simple-Button), an out-of-the-box Simple-Button **derivative** for the STM32HAL library.
+
+- **Step 1**: You need to customize the transformation for your chip:
+    - The STM32HAL library has been customized for this project, you just need to start with step 2.
+
+- **Step 2**: Use project to create and use button: (**[]** represents optional step)
+    - 2.1 - Use the **SIMPLEBTN__CREATE()** macro to create the required buttons.
+    - [2.2] - Declare the created button (if used in another file) using the **SIMPLEBTN__DECLARE()** macro.
+    - 2.3 - Calling the button initializer before the `while` loop in the `main` function.
+    - 2.4 - Calling buttons' asynchronous handler inside a `while` loop.
+    - 2.5 - Calling buttons' interrupt handler function from the EXTI interrupt function.
+
+### Detailed Steps
+
+#### Step 1
+
+- The STM32HAL library has been customized for this project, you just need to start with step 2.
+
+#### Step 2
+
+0. Buttons can be created with **a single macro**. But in real projects we often want to have a single `.c` file to manage all the buttons we need and a `.h` file to use as an interface. The two API macros provided by this project can well complete the `create` + `declare` two work. The typical project directory structure is **the one used in steps 2.1-2.5 below** :
+```markdown
 .
 |
-+-- kim_stm32_hal_button.h 本项目提供的头文件
++-- Simple_Button.h  # The only file provided by this project.
 |
-+-- my_button.c (#include "kim_stm32_hal_button.h") 用户自建文件，用于定义按键
++-- my_buttons.c  # User's file, in where buttons will be created.
 |
-+-- my_button.h (#include "kim_stm32_hal_button.h") 用户自建文件，用于声明按键
++-- my_buttons.h  # User's file, in where buttons will be declared.
 |
-+-- main.c (#include "my_button.h") 用户自建文件，用于调用按键
++-- main.c  # User's file, importing "my_buttons.h", and using the buttons.
 
 ```
 
-* 然后，在 `my_button.c` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__REGISTER** 宏 来生成所需要的代码。（示例如下： 我的按钮触发时会在 **PA7** 产升**下降沿** 信号， 我想给按钮取名为**myButton**  ）
-
+1. Use the **SIMPLEBTN__CREATE()** macro to create the required buttons. Create three buttons and connect them respectively to `GPIOA-Pin0`, `GPIOB-Pin0`, and `GPIOD-Pin14`, all triggered by the falling edge. Name them respectively as `SB1`, `SB2`, and `SB3`. The STM32-HAL example is as follows (the following code is located at `my_buttons.c`) :
 ```c
-/* 以下是 my_button.c 内容 */
-#include "kim_stm32_hal_button.h" // 包含头文件
+#include "Simple_Button.h"
 
-// 依次为            端口基地址    引脚编号       触发边沿选择       按键名称 
-KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // 注意不用加 ;
+/* no ';' after Macro */
+
+SIMPLEBTN__CREATE(GPIOA_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB1)
+
+SIMPLEBTN__CREATE(GPIOB_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB2)
+
+SIMPLEBTN__CREATE(GPIOD_BASE, GPIO_PIN_14, EXTI_TRIGGER_FALLING, SB3)
 
 ```
 
-* 接着，在 `my_button.h` 中，先引入头文件`kim_stm32_hal_button.h`，使用 **KIM_BUTTON__DECLARE** 宏 来生成必要的声明信息。（注意： 声明的按钮名称必须是 **KIM_BUTTON__REGISTER** 宏 定义过的）
-
+2. The button created using the **SIMPLEBTN__DECLARE()** macro declaration (if used in another file). Following the three buttons created in 2.1, here demonstrates how to declare the three created buttons in `my_buttons.`
 ```c
-/* 以下是 my_button.h 内容 */
-#pragma once
-#include "kim_stm32_hal_button.h" // 包含头文件
+#include "Simple_Button.h"
 
-// 按钮名称必须与 my_button.c 中保持一致
-KIM_BUTTON__DECLARE(myButton) // 注意不用加 ;
+/* no ';' after Macro */
+
+SIMPLEBTN__DECLARE(SB1)
+
+SIMPLEBTN__DECLARE(SB2)
+
+SIMPLEBTN__DECLARE(SB3)
 
 ```
 
-* 最后，在 `main.c` 中，引入头文件 `my_button.h` ，准备好回调函数，然后在三处调用三个函数即可。示例与详细说明如下：
-
+3. The button initializers are called before the `while` loop in the `main` function. Following up on the previous step, here's an example:
 ```c
-/* 以下是 main.c 内容 */
+#include "my_buttons.h"
+
+int main(void) {
+
+    SimpleButton_SB1_Init();
+    SimpleButton_SB2_Init();
+    SimpleButton_SB3_Init();
+
+    while (1) {
+
+    }
+}
+
+```
+
+4. Call the button asynchronous handler inside the `while` loop. Following up from the previous step, prepare `short press`, `long press`, and `double click` callbacks (see [Advanced features](#advanced-features) for more features), and pass in a `while` loop that handles buttons asynchronically, as shown in the following example (the following code is located in `main.c`) :
+```c
+#include "my_buttons.h"
+
+/* Prepare the callback functions for 'short press', 'long press', and 'double-click'. By default, they have no parameters and no return values */
+void TurnOn_LED(void) {
+    /* The function name is arbitrary, as long as it has no parameters and no return */
+    /* The function will be called after the corresponding event is triggered */
+}
+
+void DoSomething(void) {
+    /* ... */
+}
+
+int main(void) {
+
+    SimpleButton_SB1_Init();
+    SimpleButton_SB2_Init();
+    SimpleButton_SB3_Init();
+
+    while (1) {
+        //Pass the 'short press', 'long press', 'double click' callback function in turn, or NULL or 0 if not needed.
+        SimpleButton_SB1.Methods.asynchronousHandler(
+            TurnOn_LED,
+            NULL,
+            DoSomething
+        );
+        SimpleButton_SB2.Methods.asynchronousHandler(
+            NULL,
+            NULL,
+            DoSomething
+        );
+        SimpleButton_SB3.Methods.asynchronousHandler(
+            NULL,
+            DoSomething,
+            NULL
+        );
+    }
+}
+
+```
+
+5. The final step is to call the button interrupt handling function in the EXTI interrupt function. Here, it is divided into two situations: 1. **You need to implement the interrupt function yourself**. 2. **There are already ready-made interrupt callback functions** (for example, the HAL library of STM32 uses CubeMX to generate code). Here are some examples to illustrate:
+
+    - **You need to implement the interrupt function yourself**. Most single-chip microcomputer bare-metal development requires this to be done. Go to the assembly startup file to find the `Interrupt Vector Table`, then locate the interrupt corresponding to the EXTI pin and implement the interrupt function. Continuing from the previous step, taking the STM32 standard library as an example:
+
+    ```c
+        // SB1, SB2 ----- Pin0
+        void EXTI0_IRQHandler(void) {
+            if (EXTI_GetITStatus(EXTI_Line0) == SET) {
+                SimpleButton_SB1.Methods.interruptHandler();
+                SimpleButton_SB2.Methods.interruptHandler();
+
+                EXTI_ClearITPendingBit(EXTI_Line0);
+            }
+        }
+
+        // SB3 ----- Pin14
+        void EXTI15_10_IRQHandler(void) {
+            if (EXTI_GetITStatus(EXTI_Line14) == SET) {
+                SimpleButton_SB3.Methods.interruptHandler();
+
+                EXTI_ClearITPendingBit(EXTI_Line14);
+            }
+        }
+    ```
+
+    - **There are already interrupt callbacks out there**. Just find the generated callback and call `interruptHandler()` from there. Following up on the previous step, using the HAL library generated by STM32 CubeMX as an example, `stm32f1xx_hal_gpio.c` provides this weak functional interface:
+    ```c
+    __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+    {
+        /* Prevent unused argument(s) compilation warning */
+        UNUSED(GPIO_Pin);
+        /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_GPIO_EXTI_Callback could be implemented in the user file
+        */
+    }
+    ```
+
+    So, let's copy the code above to `main.c` and call `interruptHandler()` there, like so:
+    ```c
+    // no __weak
+    void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+    {
+        switch (GPIO_Pin) {
+        case GPIO_PIN_0: {
+            SimpleButton_SB1.Methods.interruptHandler();
+            SimpleButton_SB2.Methods.interruptHandler();
+            break;
+        }
+        case GPIO_PIN_14: {
+            SimpleButton_SB3.Methods.interruptHandler();
+            break;
+        }
+        }
+    }
+    ```
+
+[Back to Contents](#contents)
+
+---
+
+## Advanced Features
+
+### Timer Long Push
+- Sometimes, a single long press is not enough for our needs, and we want different long presses to have different effects. This is where you need to use an advanced feature called **timer long push**.
+- Find `Mode-Set` in `CUSTOMIZATION` at the top of the file, Change `#define SIMPLEBTN_MODE_ENABLE_TIMER_LONG_PUSH 0` to `#define SIMPLEBTN_MODE_ENABLE_TIMER_LONG_PUSH 1` to enable **timer long push**.
+- With this feature enabled, the button's long-press callback will **no longer have a no-parameter, no-return type, but a `uint32_t`, no-return type**, which will take the duration of the long-press.
+- Here's an example (the initialization function, interrupt handling, and short press/double click callbacks do not make any special changes here and are omitted without demonstration) :
+```c
+/* Macro definition needs to be changed at Mode-Set at the beginning of the file to enable timed long presses */
+#define SIMPLEBTN_MODE_ENABLE_TIMER_LONG_PUSH           1
+
+/* Prepare the long-press callback with arguments */
+void TimerLongPush_CallBack(uint32_t pushTime) {
+    if (pushTime < 5000) {
+    /* Long press less than 5 seconds function 1 */
+    } else {
+    /* Long press for 5 seconds or more 2 */
+    }
+}
+
+int main(void) {
+    /* ... */
+    while (1) {
+        SimpleButton_SB1.Methods.asynchronousHandler(
+            NULL,
+            TimerLongPush_CallBack,
+            NULL
+        );
+    }
+}
+
 /* ... */
-#include "my_button.h"
 
-// 短按回调函数，按键短按后会执行它 (函数名随意，类型必须是 void(*)(void))
-void short_push_callback(void) { ... }
-
-// 长按回调函数，长按后会执行它 (函数名随意，类型必须是 void(*)(void))
-void long_push_callback(void) { ... }
-
-// 双击回调函数，双击后会执行它 (函数名随意，类型必须是 void(*)(void))
-void double_push_callback(void) { ... }
-
-int main(void)
-{
-    /* ... 其他无关代码 ... */
-
-    // 【第一处】：在 while 循环之前，调用初始化函数。初始化函数名称为 Kim_Button_Init_ 加上你自定义的按键名。
-    //     例如：我在my_button.c和my_button.h中还定义了一个按键，名叫 ABC，
-    //     那么此处我应该再调用一个函数 Kim_Button_Init_ABC()
-    Kim_Button_Init_myButton();
-
-    while(1)
-    {
-        /* ... 其他无关代码 ... */
-
-        // 【第二处】：在while循环当中调用异步处理函数，调用的方法类似成员函数，依次传入 短/长/双 按回调函数。
-        //     补充： （Kim_Button_ 加上 按钮名称） 这个结构体是全局变量，我们通过它调用函数。
-        //     如果不需要某个回调函数，可以传入NULL。
-        Kim_Button_myButton.method_asynchronous_handler(
-            short_push_callback, // 如果不需要，可以填NULL
-            long_push_callback,  // 如果不需要，可以填NULL
-            double_push_callback  // 如果不需要，可以填NULL
-        );
-
-        /* ... 其他无关代码 ... */
-    }
-}
-
-// 【第三处】：在相应的中断回调函数中使用按键的中断处理函数
-//        如果你使用了 STM32CubeMX 生成了 NVIC 对应代码，可以在 HAL_GPIO_EXTI_Callback()函数中调用
-//        如果没有使用 STM32CubeMX 生成对应中断代码，则需要在 EXTI?_IRQHandler()函数中调用(? 为0~4，9_5或15_10)
-//        下面演示两种写法
-
-// 第三处-写法一：
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-     /* ... 其他无关代码 ... */
-    if(GPIO_Pin == GPIO_PIN_7) // 假设我的按钮链接的是 PA7
-    {
-        // 调用按键的中断处理函数
-        Kim_Button_myButton.method_interrupt_handler();
-    }
-     /* ... 其他无关代码 ... */
-}
-
-// 第三处-写法二：（可以尝试在stm32_xxxx_it.c文件中找一下这个回调函数，如果没有就自己写）
-void EXTI7_IRQHandler(void) // 假设我的按钮链接的是 PA7
-{
-     /* ... 其他无关代码 ... */
-    if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != 0)
-    {
-        // 调用按键的中断处理函数
-        Kim_Button_myButton.method_interrupt_handler();
-        __HAL_GPIO_EXTI_CLEAR_IT();
-    }
-     /* ... 其他无关代码 ... */
-}
 ```
 
-* 【可选功能】计时长按 <span id="long_push_timing_example_zh_"> </span>
-
+### Counter Repeat Push
+- Sometimes, a simple double click doesn't fit our needs. We might need three, four... In this case, we need to enable the **Counter Repeat Push** feature.
+- Find `Mode-Set` in `CUSTOMIZATION` at the top of the file, Change `#define SIMPLEBTN_MODE_ENABLE_COUNTER_REPEAT_PUSH 0` to `#define SIMPLEBTN_MODE_ENABLE_COUNTER_REPEAT_PUSH 1 `to enable **Counter Repeat Push**.
+- With this feature enabled, the **no-parameter, no-return double-click callback function for a button will become a no-return function with a `uint8_t` parameter**, which takes the actual number of presses. So what was passed into the double-click callback function is actually passed into the counting multi-click callback function.
+- Here's an example (the initialization function, interrupt handling, and short press/long press callbacks do not change here, so they are omitted without demonstration) :
 ```c
-/***** Macro to enable different long push time *****/
-// 找到这个宏，将它的值修改为 1，长按功能会升级为定时长按，长按回调函数将接收长按时间作为参数。
-#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
+/* Need to change macro definition at Mode-Set at the beginning of the file to enable counting multi-clicks */
+#define SIMPLEBTN_MODE_ENABLE_COUNTER_REPEAT_PUSH       1
 
-// 准备好带 uint32_t 参数的长按回调函数（名字随意）
-// 该参数会接受实际的按键按下的时间(存在误差，与一轮while循环用时相近)
-void long_push_callback(uint32_t long_push_tick)
-{
-    if(long_push_tick < 3000) {
-        /* 1~3 s */
-    }
-    else if(long_push_tick < 10000) {
-        /* 3~10 s */
-    }
-    else {
-        /* > 10 s */
+/* Get ready to count multi-click callbacks (instead of the original double-click callback) */
+void CounterRepeatPush_CallBack(uint8_t pushTime) {
+    switch (pushTime) {
+    case 2:
+        /* ... */
+        break;
+    case 3:
+        /*... */
+        break;
+    case 4:
+        /*... */
+        break;
+
+    case 10:
+        /*... */
+        break;
+    default:
+        break;
     }
 }
 
-int main(void)
-{
-    /* ... */
-    Kim_Button_Init_myButton(); // 与一般情况一致
-
-    while(1)
-    {
-        Kim_Button_myButton.method_asynchronous_handler(
-            ...， // 与一般情况一致
-            long_push_callback,  // 如果不需要，可以填NULL
-            ...  // 与一般情况一致
+int main(void) {
+    /*... */
+    while (1) {
+        SimpleButton_SB1.Methods.asynchronousHandler(
+            NULL,
+            NULL,
+            CounterRepeatPush_CallBack
         );
     }
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-     /* ... 其他无关代码 ... */
-    if(GPIO_Pin == GPIO_PIN_7) 
-    {
-        // 与一般情况一致
-        Kim_Button_myButton.method_interrupt_handler();
-    }
-     /* ... 其他无关代码 ... */
-}
 ```
 
-* 【可选功能】组合按键 <span id="combination_button_example_zh_"> </span>
-  * 本项目支持简单的组合键，基本原理是为**当前按键**(button-[this])设置“前置按键”与“组合回调函数”。当前置按键处于按下状态时，按下**当前按键**触发组合回调函数。
+### Long Push Hold
+- Sometimes we want a function to fire intermittently and continuously after a button press. This is where **Long Push Hold** comes in.
+- Find `Mode-Set` in `CUSTOMIZATION` at the top of the file, Change `#define SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD 0` to `#define SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD 1`to enable **Long Push Hold**.
+- With this feature enabled, the incoming long press callback function remains empty (if you also enable [timer long push](#timer-long-push), it will have a `uint32_t` argument just like normal **timer long push**), the only difference is that the function will be called periodically for as long as you keep pressing the button.
+- The example is omitted because the user code has not changed, only the callback timing has changed.
 
+### Button Combinations
+- Sometimes we want a combination of buttons to do something completely new. This is where **button combinations** come in.
+- Find `Mode-Set` in `CUSTOMIZATION` at the top of the file, Change `#define SIMPLEBTN_MODE_ENABLE_COMBINATION 0` to `#define SIMPLEBTN_MODE_ENABLE_COMBINATION 1 `to enable **button combinations**.
+- The button combination in this project is` predecessor button `+` successor button `. The composite button's callback is bound to the `next button` and specifies its` previous button `at the` next button `. When the user presses the `next button` during the `previous button` press, the button combination callback function bound to the `next button` is triggered.
+- button combinations are in order. `button A + button B` is A different combination from `button B + button A`.
+- Neither the `predecessor` nor the `successor` button will trigger their short press, long press/timed long press/hold, double click/count multi-click callbacks **after the button combination fires**. (**But if the [keep-long-press](# keep-long-press) mode is enabled and the keep-long-press callback is triggered before the buttonstroke is triggered, the buttonstroke will not work!!**)
+- While composite button callbacks don't pass asynchronous handlers as arguments, **async handlers can't be missing**.
+- Here's an example (the initialization function, interrupt handling, short press/long press/multi-click callbacks do not change here, so they are omitted without demonstration) :
 ```c
-/***** Macro to enable button combination *****/
-// 找到这个宏，将它的值修改为 1
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
+/* Macro definition needs to be changed at Mode-Set at the beginning of the file to enable button combinations */
+#define SIMPLEBTN_MODE_ENABLE_COMBINATION               1
 
-// 组合键回调函数（名称随意，但必须无参无返回值）
-void CombinationCallBack(void)
-{
-    /* ... */
+// Press SB1 then SB2 callback function
+void Cmb_SB1_then_SB2_CallBack(void) {
+    /*... */
 }
 
-int main(void)
-{
-    Kim_Button_Init_KEY1();
-    Kim_Button_Init_KEY2();
-
-    // 假设我要设置组合键：在KEY1按下期间，KEY2按下并释放后会调用 CombinationCallBack
-    // 以下配置必须在初始化函数之后
-    Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // KEY2的前置按键是KEY1
-
-    // ！注意 组合键回调函数绑定在后按下的按键上！
-    Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
-
-    while(1)
-    {
-        Kim_Button_KEY1.method_asynchronous_handler(...);// 与一般情况一致
-        Kim_Button_KEY2.method_asynchronous_handler(...);// 与一般情况一致
-    }
+// Press SB2 then SB1's callback function
+void Cmb_SB2_then_SB1_CallBack(void) {
+    /*... */
 }
 
+int main(void) {
+    /* Initialize first, otherwise data will be overwritten */
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-     /* ... 其他无关代码 ... */
-    if(...) 
-    {
-        // 与一般情况一致
-        Kim_Button_KEY1.method_interrupt_handler();
-    }
-    else if(...)
-    {
-        // 与一般情况一致
-        Kim_Button_KEY2.method_interrupt_handler();
-    }
-     /* ... 其他无关代码 ... */
-}
-```
+    /* Configure composite buttons after initialization */
 
-* 【可选功能】多击按键 <span id="repeat_button_example_zh_"> </span>
-  * 开启该功能后，双击按键回调函数将变为多击按键回调函数，类型由 `void (*)(void)` 变为 `void (*)(uint8_t)` 。该参数会接收多击按键次数（2 ~ 7次）。示例如下：
+    // SB2 prepend SB1 and configure the SB1 --> SB2 combo callback
+    SimpleButton_SB2.Public.combinationConfig.previousButton = &SimpleButton_SB1;
+    SimpleButton_SB2.Public.combinationConfig.callBack = Cmb_SB1_then_SB2_CallBack;
 
-```c
+    // SB1 prepend SB2 and configure the SB2 --> SB1 combo callback
+    SimpleButton_SB1.Public.combinationConfig.previousButton = &SimpleButton_SB2;
+    SimpleButton_SB1.Public.combinationConfig.callBack = Cmb_SB2_then_SB1_CallBack;
 
-/***** Macro to enable button repeat(2 ~ 7) *****/
-// 找到这个宏，将它的值修改为 1
-#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        1
-
-// 多击回调函数
-void repeat_push_callback(uint8_t push_time)
-{
-    switch(push_time)
-    {
-    case 2: ... break;
-    case 3: ... break;
-    case 4: ... break;
-    ...
-    case 7: ... break;
+    while (1) {
+        SimpleButton_SB1.Methods.asynchronousHandler(
+            NULL,
+            NULL,
+            NULL
+        );
+        SimpleButton_SB2.Methods.asynchronousHandler(
+            NULL,
+            NULL,
+            NULL
+        );
     }
 }
 
-// 主循环和中断中正常调用 method_asynchronous_handler 与 method_interrupt_handler。
-// 只需要在调用 XXX.method_asynchronous_handler(..., ..., repeat_push_callback) 第三个参数填多击回调（而非普通模式的双击回调）即可。
+```
+
+### Low Power
+- CPU idling makes no sense when buttons are not pressed. At this point, the **low-power** mode can be entered.
+- This project provides a macro function `SIMPLEBTN__START_LOWPOWER` (C99 + or C++11 + only) that determines if all buttons are idle and enters lowpower mode. **One line of code enters lowpower**.
+- **Low power support is a core design motivation for this project**, which is covered in detail in [Low Power Design](#low-power-design).
+- A simple example is as follows (no special changes are made to initialization, async handlers, interrupt handlers, etc.) :
+```c
+/*... */
+
+int main(void) {
+    /*... */
+
+    while (1) {
+        if ( /* all else allowed, enter low power */ ) {
+            // This is a variadic macro, passing in all button objects
+            SIMPLEBTN__START_LOWPOWER(SimpleButton_SB1, SimpleButton_SB2, SimpleButton_SB3);
+        }
+    }
+}
+
+/*... */
 
 ```
 
-* 【可选功能】低功耗 <span id="low_power_example_zh_"> </span>
-
+### Adjustable time
+- There are many important "**decision times**" in this project, such as: minimum long press time, window time for multiple clicks, button cooldown time... Maybe you need to configure different **decision times** for different buttons, in which case, you need to use the **adjustable time** feature.
+- Find `Mode-Set` in `CUSTOMIZATION` at the top of the file, Change `#define SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME 1` to `#define SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME 0`, to enable **adjustable time**. (**Note! It is turned on when it is 0. Usually enabled by default**)
+- The following is an example (no special changes are made to initialization, async handlers, interrupt handlers, etc.) :
 ```c
 
-int main(void)
-{
-  while(1)
-  {
-    /* 其他内容正常书写，在while循环恰当位置调用这样一个宏函数 */
-    /* 参数为：所有按键的“状态结构体变量”(Kim_Button_ + 按键名)。 参数是可变数量的。 */
-    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2, Kim_Button_myButton3);
-  }
+/* Need to change macro definition value at Mode-Set at the beginning of file to enable adjustable time */
+#define SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME         0
+
+int main(void) {
+    /*... */
+    /* Initialize first, otherwise data will be overwritten */
+
+    /* Configure adjustable time after initialization */
+    SimpleButton_SB1.Public.longPushMinTime = 5000;  // Min press time changed to 5 seconds
+    SimpleButton_SB1.Public.coolDownTime = 1000; // cooldown changed to 1 second
+    SimpleButton_SB1.Public.repeatWindowTime = 0;  // No double/multiple clicks
+
+    while (1) {
+        /*... */
+    }
+}
+
+/*... */
+
+```
+
+### Name prefixes/namespaces
+- Sometimes we don't want to use the `SimpleButton_` prefix and need to define a custom one. This is easily achieved with **name prefixes/namespaces**.
+- Just find the `Namespace` in `CUSTOMIZATION` at the top of the file, Just change `#define SIMPLEBTN_NAMESPACE SimpleButton_` to the custom prefix you need.
+- Here is an example of `#define SIMPLEBTN_NAMESPACE SB_` :
+```c
+// Find the 'Namespace' in 'CUSTOMIZATION' at the top of the file and modify the following macro
+#define SIMPLEBTN_NAMESPACE                             SB_
+
+// Suppose the name of the case is myButton when creating the button in SIMPLEBTN__CREATE().
+
+int main(void) {
+    // Initialize the button with SB_myButton_Init() instead of SimpleButton_myButton_Init()
+    SB_myButton_Init();
+
+    while (1) {
+        // Call the asynchronous handler with SB_myButton instead of SimpleButton_myButton
+        SB_myButton.Methods.asynchronousHandler(...) ;
+    }
+}
+
+void EXTI0_IRQHandler(void) {
+    // Call the interrupt handler with SB_myButton instead of SimpleButton_myButton
+    SB_myButton.Methods.interruptHandler();
 }
 
 ```
 
+[Back to Contents](#contents)
 
-### 动态设置：
+---
 
-* 可以在代码中为每个按键设置独立的长按判定时间，示例如下：
-
-```c
-// 先初始化
-Kim_Button_Init_myButton();
-
-// 将 myButton 按键的长按判定时间延长至3000ms(改设置必须在 Init 函数之后)
-Kim_Button_myButton.public_long_push_min_time = 3000;
-```
-
-+ 可以在代码中为每个按键设置独立的冷却时间，示例如下：
-
-```c
-// 先初始化
-Kim_Button_Init_myButton();
-
-Kim_Button_myButton.public_cool_down_time = 5000; // 每5s才能触发一次
-```
-
-+ 可以在代码中为每个按键设置独立的双击判定时间，示例如下：
-
-```c
-// 先初始化
-Kim_Button_Init_myButton();
-
-Kim_Button_myButton.public_double_push_max_time = 0; // 不等待双击/多击判定（减少短按响应延迟，放弃双击功能）
-```
-
-
-
-### 注意事项：
-
-* ~~使用了SysTick，可能会与HAL_Delay冲突。【默认设置下不冲突】~~ （v0.0.5后完全不冲突）
-
-* 每一个EXTI端口号只能有一个按钮，也就是说PA3与PB3不能同时作为按钮引脚。
-  
-  
-
-### 自定义选项（宏）：
-
-* 在`kim_stm32_hal_button.h`文件的一开头，有一些可以修改的宏定义，也可以称之为自定义选项。可以根据项目需要更改这些宏定义的值。这些宏选项有以下几个部分：
-  
-  * [头文件选择](#header_file_choice_zh_)
-  * [时间设置](#time_config_zh_)
-  * [中断优先级设置](#NVIC_priority_zh_)
-  * [启动/禁用-选项](#enable_disable_options_zh_)
-  * [函数与钩子](#functions_hooks_zh_)
-  * [名字空间/命名前缀](#namespace_nameprefix_zh_)
-
-* **头文件选择** <span id="header_file_choice_zh_"> </span>
-  
-  * 根据芯片型号选择合适的头文件，取消对应的注释。
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b HEADER-FILES */
-
-/***** @headerfile Select one of the header files given below as needed *****/
-// 根据芯片型号选择合适的头文件，取消对应的注释。
-# include "stm32f1xx_hal.h"
-// # include "stm32f2xx_hal.h"
-// # include "stm32f3xx_hal.h"
-// # include "stm32f4xx_hal.h"
-// # include "stm32h4xx_hal.h"
-
-```
-
-* **时间设置** <span id="time_config_zh_"> </span>
-  * 设置各个时间参数，作为**默认值**（每个按键可以分别动态修改）
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b ENABLE-DISABLE-OPTIONS */
-
-/***** time config(配置各种时间) *****/
-/* one tick(one interrupt = 1ms) (默认SysTick中断间隔为1ms) */
-#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
-/* calculate the tick with the time(计算宏，由于一次中断计数是1ms，此处tick == time) */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
-
-// 按下按键后，延时（非阻塞）用于消抖的时间
-#define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-
-// 松开按键后，判定双击/多击的窗口时间。在此期间再次按下，判定为双击/多击。
-#define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
-
-// 长按判定的最小时间，超过这个时间就判定为长按
-#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
-
-// 松开按键后，延时（非阻塞）用于消抖的时间
-#define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-
-// 按键功能执行完毕后的冷却时间
-#define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
-
-// 按下保持的最大时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
-#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
-
-// 组合键的前置按键的最大按下保持时间，超过就恢复 Wait_For_Interrupt，或进入ERROR_HOOK(DEBUG模式)
-#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
-
-```
-
-* **中断优先级设置** <span id="NVIC_priority_zh_"> </span>
-  * 设置对应的中断优先级。如果使能了 KIM_BUTTON_STM32CUBEMX_GENERATE_* 宏选项，该参数无效。
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b NVIC-PRIORITY */
-
-/***** NVIC Priority config *****/
-
-// SysTick 抢占优先级，默认情况下与 HAL库 设置一致，即 TICK_INT_PRIORITY
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
-
-// SysTick 响应优先级，永远保持0，该宏已弃用！
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
-
-// EXTI 抢占优先级
-#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
-
-// EXTI 响应优先级
-#define KIM_BUTTON_NVIC_EXTI_SubPriority            0
-
-```
-
-* **启动/禁用-选项** <span id="enable_disable_options_zh_"> </span>
-  * 设置下面这些宏定义的值(0/1)，可以使能或失能对应功能/模式。
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b ENABLE-DISABLE-OPTIONS */
-
-/* If this macro is 1, then the TIME above cannot be configured separately for each button */
-// 如果这个宏是1，那么上面的TIME不能为每个按钮单独配置（但更节省RAM）
-#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
-
-/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
- ***** otherwise define follow macro as @c 0 .                                  *****/
-/* 如果你使用STM32CubeMX生成了相关代码，请将下方对应的宏定义值改为1，可以减少重复代码 */
-/* 如果不确定，可以先保持宏定义为0，测试通过后，再改为1，查看效果是否改变 */
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0 // 如果 CubeMX生成了SysTick相关代码，宏改为1
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0 // 如果 CubeMX生成了EXTI相关代码，宏改为1
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0 // 如果 CubeMX生成了NVIC相关代码，宏改为1
-
-/***** Macro for use debug mode *****/
-// 将宏的值设置为1可以启动调试模式
-#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
-
-/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
-// 当宏设置为 1 时，状态机函数不内联，可以大幅降低ROM占用，但可能会减慢函数调用速度
-#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
-
-/***** Macro to enable different long push time *****/
-// 当宏设置为 1 时，开启计时长按功能
-// 长按回调函数会传入一个 uint32_t 类型的参数，记录着长按的tick数
-#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
-
-/***** Macro to enable button combination *****/
-// 当宏设置为 1 时，开启组合键功能
-// 需要使用 Kim_Button_name.public_comb_before_button = &(先按下的按键); 绑定先按下的按键
-// 与 Kim_Button_name.public_comb_callback = callback_func; 绑定回调函数
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
-
-/***** Macro to enable button repeat(2 ~ 7) *****/
-// 当宏为 1 时，开启计数多击功能
-// 支持至多 7 次的多击检测（多击次数会作为参数传入回调函数）。为 0 时只支持双击，回调函数无参。
-#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
-
-```
-
-* **函数与钩子** <span id="functions_hooks_zh_"> </span>
-  * 设置下面这些宏函数，定制代码行为。例如自定义的 DEBUG_ERROR_HOOK 可在调试模式出现异常时被调用。
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b FUNCTIONS-HOOKS */
-
-/***** Critical Zone *****/
-/* define follow macro when multi-thread */
-// 多线程下需要保护的临界区，单线程下可以注释掉
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
-
-/* define follow macro any time */
-// 单线程与多线程都必须保护的临界区，不建议修改
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
-
-/***** Macro for debug hook *****/
-/* ... can be your function ... */
-// DEBUG 模式下出现异常时会调用的函数，可自定义
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
-
-/***** Macro for get tick *****/
-// 未来扩展使用，不建议修改
-#define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
-
-/***** Macro for GPIO read pin *****/
-// 未来扩展使用，不建议修改
-#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
-
-/***** Macro to stat low power mode *****/
-// 进入低功耗模式的宏函数，可自定义
-#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
-
-```
-
-* **名字空间-命名前缀** <span id="namespace_nameprefix_zh_"> </span>
-  * 自定义设置暴露(extern)的内容的命名前缀，包括按键名前缀和初始化函数前缀。
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b NAMESPACE-NAME-PREFIX */
-
-/***** @namespace Name Prefix *****/
-/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
- ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
- **                                                                                     **
- ** @example                                                                            **
- **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
- **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
- **                                                                                     **
- **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
- **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
- **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
-// 这个宏定义是用来自定义前缀的，默认为Kim_Button_。如果修改为KEY_，那么在main.c使用的时候
-// 就要使用 `KEY_Init_##__name()` 函数初始化，而非使用默认的 `Kim_Button_Init_##__name()`
-// 相应的，也应该使用 KEY_##__name.method_asynchronous_handler(..., ..., ...) 以及
-// KEY_##__name.method_interrupt_handler()
-#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
-
-```
-
-### 状态机图解
+## State Machine Graph
 
 ```mermaid
 
 stateDiagram-v2
-    [*] --> Wait_For_Interrupt
+
+    classDef Begin_Point_State fill: #8dbfe0ff,stroke:#0369a1,stroke-width:2px,color:black
+    class Wait_For_Interrupt Begin_Point_State
     
-    %% 核心状态转换流程
-    Wait_For_Interrupt --> Push_Delay: 中断触发(引脚电平变化)
-    Push_Delay --> Wait_For_End: 40ms后**确认按下**
-    Push_Delay --> Wait_For_Interrupt: 40ms后**发现是误触发**
-    Wait_For_End --> Release_Delay: 引脚释放
-    Release_Delay --> Wait_For_Repeat: 40ms后**确认释放**
-    Wait_For_Repeat --> Repeat_Push: 300ms内再次按下
-    Wait_For_Repeat --> Single_Push: 300ms超时
-    Repeat_Push --> Cool_Down: 执行 双击/计数多击 回调
-    Single_Push --> Cool_Down: 执行 短按、长按/计时长按 回调
-    Cool_Down --> Wait_For_Interrupt: 冷却时间结束
+    %% Core States
+    Wait_For_Interrupt --> Push_Delay: EXTI trigger
+    Push_Delay --> Wait_For_End: Delay
+    Push_Delay --> Wait_For_Interrupt: **Found to be a false trigger**
+    Wait_For_End --> Release_Delay: Release button
+    Release_Delay --> Wait_For_End: **Found didn't release**
+    Release_Delay --> Wait_For_Repeat: **Confirm release**
+    Wait_For_Repeat --> Repeat_Push: Push again
+    Wait_For_Repeat --> Single_Push: repeat-push-window timeout
+    Repeat_Push --> Cool_Down: do repeat-callback
+    Single_Push --> Cool_Down: do single-callback
+    Cool_Down --> Wait_For_Interrupt: cool down over
     
-    %% 组合键状态转换（可选）
-    Wait_For_End --> Combination_WaitForEnd: 作为**前置按键**时，后置按键被按下
-    Combination_WaitForEnd --> Combination_Release: 组合键释放
-    Combination_Release --> Combination_WaitForEnd: 40ms后仍按下
-    Combination_Release --> Cool_Down: 40ms后**确认释放**
-    Cool_Down --> Combination_Release: 40ms后**发现未释放**
-    Release_Delay --> Combination_Push: 组合键触发
-    Combination_Push --> Cool_Down: 执行 组合键 回调
+    %% Comination Button 
+
+    Wait_For_End --> Combination_WaitForEnd: **next button** is pushed down
+
+    state Combination {
+        Combination_WaitForEnd
+        Combination_Release
+        Combination_Push
+    }
+
+    Combination_WaitForEnd --> Combination_Release: release
+    Combination_Release --> Combination_WaitForEnd: Reconfirm release failed
+    Combination_Release --> Cool_Down: Reconfirm release success
+
+    Release_Delay --> Combination_Push: **next button** is pushed down
+    Combination_Push --> Cool_Down: do combination_callback
     
-    %% 错误处理/安全机制
-    Wait_For_End --> Wait_For_Interrupt: 按下超时60秒
-    Combination_WaitForEnd --> Wait_For_Interrupt: 按下超时60秒
+    state Hold {
+        Hold_Push
+        Hold_Release
+    }
+
+    Wait_For_End --> Hold_Push: time reached
+    Hold_Push --> Hold_Release: release button
+    Hold_Release --> Hold_Push: Reconfirm release failed
+    Hold_Release --> Cool_Down: Reconfirm release success
+
+    Wait_For_End --> Wait_For_Interrupt: safe-time timeout
+    Combination_WaitForEnd --> Wait_For_Interrupt: safe-time timeout
     
-    %% 状态说明
     note left of Wait_For_Interrupt
-        初始/空闲状态
-        等待中断触发
-    end note
-    
-    note right of Push_Delay
-        按下消抖状态
-        持续40ms
-    end note
-    
-    note right of Wait_For_End
-        等待释放状态
-        监测引脚状态
-    end note
-    
-    note right of Release_Delay
-        释放消抖状态
-        持续40ms
-    end note
-    
-    note right of Wait_For_Repeat
-        等待重复按键
-        持续300ms
-    end note
-    
-    note right of Repeat_Push
-        重复按键触发
-        执行多击回调
-    end note
-    
-    note right of Single_Push
-        单次按键触发
-        执行短按/长按回调
-    end note
-    
-    note left of Cool_Down
-        冷却状态
-        可配置冷却时间
-    end note
-    
-    note right of Combination_WaitForEnd
-        组合键等待结束
-        监测前置按键状态
-    end note
-    
-    note left of Combination_Release
-        组合键释放检测
-        持续40ms
-    end note
-    
-    note left of Combination_Push
-        组合键触发
-        执行组合键回调
+        Wait for interrupt
+        Idle
     end note
 
 ```
 
-- [返回顶部](#stm32-simplebutton)
-  
-  
+[Back to Contents](#contents)
 
-## English <span id="english"> </span>
+---
 
-(PS: *Because of the machine translation, you may see words "key" and "button". They mean the same in this project.*)
+## Low Power Design
 
-### Brief introduction:
-  
-#### New Features(Version-0.2.0):
+- Low power consumption is the main objective of this project design: Using external interrupts instead of polling provides natural interrupt support. 
 
-+ 🛠 **Fix low-power entry function**: Make low power consumption partially atomized to avoid the risk of incorrect sleep 
+- When all the buttons are inactive, a function like `__WFI()` can be used to stop the CPU's clock and enter a low-power mode. When a button is pressed and an external interrupt is triggered, the button will be awakened. 
 
-#### Existing Features:
+- This project provides the `SIMPLEBTN__START_LOWPOWER(...)` function for directly accessing the low-power interface. The usage method has been described in the [Low Power] section (#low-power). 
 
-+ ✅ **Header-only**: just include `kim_stm32_hal_button.h`, no `.c` file needed
+- `__WFI()` is undoubtedly the simplest function for entering low-power mode, but doing so may not yield the exact results one expects. Here are some suggestions for achieving low power consumption: 
 
-+ ✅ **Rich Press Event**: Supports short-push, long-push/[timing-long-push](#long_push_timing_example)[[ENABLE](#enable_disable_options)], double-push/[repeat-counter-push](#repeat_button_example)[[ENABLE](#enable_disable_options)], [button-combination](#combination_button_example)[[ENABLE](#enable_disable_options)]
+1. Before entering the low-power mode, it is recommended to configure all I/O as pull-up/pull-down inputs or analog inputs to prevent floating of the chip I/O and the generation of leakage current. [1]
 
-+ ✅ **State Machine**: Non-blocking software debouncing, secondary confirmation of pin status, and asynchronous code processing
 
-+ ✅ **Low Power Support**：Support entering [Low power mode](#low_power_example) when the buttons are idle, Support custom [low-power entry function](#functions_hooks)
+2. For the small package type of chips, compared to the largest package, the unconnected pins should be configured as pull-up/pull-down inputs or analog inputs; otherwise, it may affect the current indicators. [1]
 
-+ ✅ **Use EXTI**: The buttons are triggered by external interrupts to ensure that button requests will not be ignored due to polling blocking
 
-+ ✅ **Dynamic Callback**: Each button short press, long press/timer long press, double-click/count multiple press supports independent callback function dynamic registration, and the callback function is allowed to be empty
+3. Release the SWD debugging interface and configure it as a GPIO function. It should be set as an input with pull-up/pull-down or as an analog input (the SWD function will be restored after wake-up). [1]
 
-+ ✅ **Zero Overhead**: For features that are not used (such as combination buttons), no additional overhead is incurred
 
-+ ✅ **Memory Reduction**: The data structure is compact and the memory usage is low
+4. It is recommended to completely turn off all unnecessary peripherals before entering the low-power mode. If conditions permit, disable the PLL switching to a lower-speed clock to save energy. 
 
-+ ✅ **Support Multiple Compilers**: It supports GCC and ArmCC compilers
+[1]: Refer to https://github.com/openwch/ch32_application_notes 
 
-+ ✅ **Critical Section Protection**: Multi-threaded data is secure and conflict-free
-
-+ ✅ **DEBUG Mode**: After enabling the debug mode, error hooks can be set in order to precisely lock onto exceptions(errors)
-
-+ ✅ **Customized Buttons**: Support setting each judgment time(such as cool down time) separately for each button
-
-### How to use: 
-
-* First, suppose we have three files (`main.c `, `my_button.c`, `my_button.h`). Among them, the `my_button.c` file stores the button codes, the `my_button.h` file stores the necessary declarations, and the `main.c` call code.
-
-```
-.
-|
-+-- kim_stm32_hal_button.h  // The header file provided by STM32-SimpleButton
-|
-+-- my_button.c (#include "kim_stm32_hal_button.h") // User-created files are used to define keys
-|
-+-- my_button.h (#include "kim_stm32_hal_button.h") // Users create their own files to declare keys
-|
-+-- main.c (#include "my_button.h") // Users create their own files to use the keys
-
-```
-
-* Then, in `my_button.c`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__REGISTER** macro to generate the required code. (Example: Assuming that there is a button, when it is triggered, it will produce a falling edge signal at **PA7**. I want to name the button **myButton**. The code is as follows: )
-  
-  ```c
-  /* The following is the content of my_button.c */ 
-  #include "kim_stm32_hal_button.h" // Include header files
-  
-  // The sequence is port base address, pin number, trigger edge selection, and button(key) name(up to you)
-  KIM_BUTTON__REGISTER(GPIOA_BASE, GPIO_PIN_7, EXTI_TRIGGER_FALLING, myButton) // Note: No need to add ;
-  ```
-  
-  
-
-* Next, in `my_button.h`, first import the header file `kim_stm32_hal_button.h`, and use the **KIM_BUTTON__DECLARE** macro to generate the necessary declaration information. (Note: The declared button name **must** be defined by the **KIM_BUTTON__REGISTER** macro)
-  
-  ```c
-  /* The following is the content of my_button.h */ 
-  #pragma once 
-  #include "kim_stm32_hal_button.h" // Include header files
-  
-  // The button name must be consistent with that in my_button.c
-  KIM_BUTTON__DECLARE(myButton) // Note: No need to add ;
-  ```
-
-* Finally, in `main.c`, import the header file `my_button.h`, prepare the callback function, and then call the three functions in three places. Examples and detailed explanations are as follows:
-  
-  
-
+5. Therefore, you may need to customize the `SIMPLEBTN_FUNC_START_LOW_POWER()` macro interface, which will be called by `SIMPLEBTN__START_LOWPOWER(...)`. The pseudo-code example is as follows:
 ```c
-/* The following is the content of main.c */ 
-/* ... */
-#include "my_button.h" 
+// Find this macro at Other-Functions at the beginning of file.
+#define SIMPLEBTN_FUNC_START_LOW_POWER()    simpleButton_start_low_power()
 
-// Callback function of short press. After shor pressing, it will be executed (the function name is arbitrary)
-void short_push_callback(void) { ... } 
+static inline void simpleButton_start_low_power(void) {
+    config_GPIO_IPD_for_low_power();
+    Disable_SWD();
+    Disable_some_Periph();
+    Disable_PLL();
 
-// Callback function of long press. After long pressing, it will be executed (the function name is arbitrary).
-void long_push_callback(void) { ... } 
+    __WFI();
 
-// Callback function of double press. After double pressing, it will be executed (the function name is arbitrary).
-void double_push_callback(void) { ... } 
-
-int main(void) 
-{
-  /* ... Other irrelevant code ... */
-
-  // 【 First Place 】 : Call the initialization function before the while loop. The name of the initialization function is Kim_Button_Init_ plus the key(button) name you defined.
-  //     For example: I also defined a key named ABC in my_button.c and my_button.h.
-  //     Then here I should call another function, Kim_Button_Init_ABC()
-  Kim_Button_Init_myButton();
-
-  while(1)
-  {
-      /* ... Other irrelevant code ... */
-
-      // 【 Second Point 】 : In a while loop, an asynchronous processing function is called. The method of the call is similar to a member function, and short/long/double-press callback functions are passed in sequence.
-      //     Supplementary: (Kim_Button_ plus the button name) This structure is a global variable, and we call functions through it.
-      //     If a certain callback function is not needed, NULL can be passed in.
-      Kim_Button_myButton.method_asynchronous_handler(
-          short_push_callback， // If not needed, NULL can be filled in
-          long_push_callback，  // If not needed, NULL can be filled in
-          double_push_callback  // If not needed, NULL can be filled in
-      );
-
-      /* ... Other irrelevant code ... */
-  }
-
-} 
-// 【 Third Point 】 : Use the interrupt handling function of the key in the corresponding interrupt callback function
-// If you have generated the corresponding code for NVIC using STM32CubeMX, you can call it in the HAL_GPIO_EXTI_Callback() function
-// If the corresponding interrupt code is not generated using STM32CubeMX, it needs to be called in the EXTIx_IRQHandler() function (x is 0~ 4,9 _5 or 15_10).
-// The following demonstrates two writing methods
-
-// Writing Method One:
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-   /* ... Other irrelevant code ... */
-  if(GPIO_Pin == GPIO_PIN_7) // Suppose my button is linked to PA7
-  {
-      // Call the interrupt handling function of the key
-      Kim_Button_myButton.method_interrupt_handler();
-  }
-   /* ... Other irrelevant code ... */
-} 
-
-// Writing Method Two: (You can try to find this callback function in the stm32_xxxx_it.c file. If it's not available, write it yourself.
-void EXTI7_IRQHandler(void) // Suppose my button is linked to PA7
-{
-   /* ... Other irrelevant code ... */
-  if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != 0)
-  {
-      // Call the interrupt handling function of the key
-      Kim_Button_myButton.method_interrupt_handler();
-      __HAL_GPIO_EXTI_CLEAR_IT();
-  }
-   /* ... Other irrelevant code ... */
-}
-```
-
-* **[optional function]** Long press for timing
-
-```c
-/***** Macro to enable different long push time *****/
-// Find this macro and modify its value to 1
-#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  1
-
-// Prepare the long-press callback function with the uint32_t parameter (the name is arbitrary)
-// This parameter will accept the actual time when the key is pressed (with an error, similar to the time taken for one while loop).
-void long_push_callback(uint32_t long_push_tick)
-{
-    if(long_push_tick < 3000) {
-        /* 1~3 s */
-    }
-    else if(long_push_tick < 10000) {
-        /* 3~10 s */
-    }
-    else {
-        /* > 10 s */
-    }
-}
-
-int main(void)
-{
-    /* ... */
-    Kim_Button_Init_myButton(); // Consistent with the general situation
-
-    while(1)
-    {
-        Kim_Button_myButton.method_asynchronous_handler(
-            ..., // Consistent with the general situation
-            long_push_callback,  // If not needed, NULL can be filled in
-            ...  // Consistent with the general situation
-        );
-    }
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-     /* ... Other irrelevant code ... */
-    if(GPIO_Pin == GPIO_PIN_7) 
-    {
-        // Consistent with the general situation
-        Kim_Button_myButton.method_interrupt_handler();
-    }
-     /* ... Other irrelevant code ... */
-}
-```
-
-* **[optional function]** button combination
-
-```c
-/***** Macro to enable button combination *****/
-// Find this macro and modify its value to 1
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
-
-// Composite key callback function (name is arbitrary, but must have no parameters and no return value)
-void CombinationCallBack(void)
-{
-    /* ... */
-}
-
-int main(void)
-{
-    Kim_Button_Init_KEY1();
-    Kim_Button_Init_KEY2();
-
-    // Suppose I want to set the combination key: during the period when KEY1 is pressed, the combination callback will be called after KEY2 is pressed and released
-    // The following configuration must be after the initialization function
-    Kim_Button_KEY2.public_comb_before_button = &Kim_Button_KEY1; // The front button of KEY2 is KEY1
-    Kim_Button_KEY2.public_comb_callback = CombinationCallBack;
-
-    while(1)
-    {
-        Kim_Button_KEY1.method_asynchronous_handler(...);// Consistent with the general situation
-        Kim_Button_KEY2.method_asynchronous_handler(...);// Consistent with the general situation
-    }
-}
-
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-     /* ... Other irrelevant code ... */
-    if(...) 
-    {
-        // Consistent with the general situation
-        Kim_Button_KEY1.method_interrupt_handler();
-    }
-    else if(...)
-    {
-        // Consistent with the general situation
-        Kim_Button_KEY2.method_interrupt_handler();
-    }
-     /* ... Other irrelevant code ... */
-}
-```
-
-* **[optional function]** button repeat
-  * After enabling this function, the double-click key callback function will change to a multi-click key callback function, and its type will change from `void (*)(void)` to `void (*)(uint8_t)`. This parameter will receive multiple keystrokes (2 to 7 times). For example:
-
-```c
-
-/***** Macro to enable button repeat(2 ~ 7) *****/
-// Find this macro and modify its value to 1
-#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        1
-
-// multi-push callback function
-void repeat_push_callback(uint8_t push_time)
-{
-    switch(push_time)
-    {
-    case 2: ... break;
-    case 3: ... break;
-    case 4: ... break;
-    ...
-    case 7: ... break;
-    }
-}
-
-// method_asynchronous_handler and method_interrupt_handler are called normally in the main loop and interrupts.
-// Just call XXX.method_asynchronous_handler(..., ..., repeat_push_callback), For the third parameter of "repeat_push_callback", fill in the multi-click callback (instead of the double-click callback in the normal mode).
-
-
-```
-
-* **[optional function]** Low Power <span id="low_power_example"> </span>
-
-```c
-
-int main(void)
-{
-  while(1)
-  {
-    /* Write the other content normally and call such a macro function at an appropriate position in the while loop */
-    /* The parameter is: the "state structure variable" of all buttons (Kim_Button_ + button name). The parameters are of a variable number. */
-    KIM_BUTTON__LOW_POWER(Kim_Button_myButton1, Kim_Button_myButton2, Kim_Button_myButton3);
-  }
+    Enable_PLL();
+    Enable_some_Periph();
+    Enable_SWD();
+    config_GPIO_normal();
 }
 
 ```
 
+[Back to Contents](#contents)
 
-### Dynamic settings:
+---
 
-* You can set an independent long-press determination time for each key in the code. An example is as follows:
+## Derivative Project
 
-```c
-// Initialize first
-Kim_Button_Init_myButton();
+- This project is a derivative project of [Simple-Button](https://github.com/Kim-J-Smith/Simple-Button).
 
-// Extend the long-press determination time of the myButton key to 3000ms(this setting must be changed after the Init function).
-Kim_Button_myButton.public_long_push_min_time = 3000;
-```
 
-+ An independent cooldown time can be set for each key in the code. An example is as follows:
-
-```c
-// Initialize first
-Kim_Button_Init_myButton();
-
-Kim_Button_myButton.public_cool_down_time = 5000; // It can only be triggered once every 5 seconds
-```
-
-+ You can set an independent double-click determination time for each key in the code. An example is as follows:
-
-```c
-// Initialize first
-Kim_Button_Init_myButton();
-
-Kim_Button_myButton.public_double_push_max_time = 0; // Do not wait for double-click determination (reduce the response delay of short presses and abandon the double-click function)
-```
-
-### Note：
-
-* ~~SysTick is used, which may conflict with HAL Delay(). [There is no conflict under the default Settings]~~ (After v0.0.5, there is no conflict)
-
-* Each EXTI port number can only have one button, which means that PA3 and PB3 cannot be used as button pins simultaneously.
-  
-  
-
-### Customizable options (Macro):
-
-* At the beginning of the `kim_stm32_hal_button.h` file, there are some macro definitions that can be modified, which can also be called custom options. The values defined by these macros can be changed according to the project requirements. These macro options have the following parts:
-  
-  * [Header-File-Choice](#header_file_choice)
-  * [Time-Config](#time_config)
-  * [NVIC-Priority](#NVIC_priority)
-  * [Enable-Disable-Options](#enable_disable_options)
-  * [Functions-Hooks](#functions_hooks)
-  * [Namespace-Nameprefix](#namespace_nameprefix)
-
-* **Header-File-Choice** <span id="header_file_choice"> </span>
-  
-  * Select the appropriate header file based on the chip model and remove the "//".
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b HEADER-FILES */
-
-/***** @headerfile Select one of the header files given below as needed *****/
-# include "stm32f1xx_hal.h"
-// # include "stm32f2xx_hal.h"
-// # include "stm32f3xx_hal.h"
-// # include "stm32f4xx_hal.h"
-// # include "stm32h4xx_hal.h"
-
-```
-
-* **Time-Config** <span id="time_config"> </span>
-  * Set each time parameter as the "default value" (each button can be dynamically modified separately)
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b ENABLE-DISABLE-OPTIONS */
-
-/***** time config *****/
-/* one tick(one interrupt = 1ms) */
-#define KIM_BUTTON_SYSTICK_ONE_TICK                 (SystemCoreClock / (1000UL / HAL_TICK_FREQ_DEFAULT))
-/* calculate the tick with the time */
-#define KIM_BUTTON_TIME_MS(_xx_ms)                  (1 * (uint32_t)(_xx_ms))
-
-// The delay (non-blocking) used for debouncing after pressing the key
-#define KIM_BUTTON_PUSH_DELAY_TIME                  KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-
-// After releasing the key, determine the window time for double-clicking. If you press again during this period, it will be judged as a double-click.
-#define KIM_BUTTON_REPEAT_PUSH_MAX_TIME             KIM_BUTTON_TIME_MS(300)         /* 300 ms */
-
-// The minimum duration for long press determination. If it exceeds this time, it will be determined as a long press
-#define KIM_BUTTON_LONG_PUSH_MIN_TIME               KIM_BUTTON_TIME_MS(1000)        /* 1000 ms */
-
-// The delay (non-blocking) used for debouncing after releasing the key
-#define KIM_BUTTON_RELEASE_DELAY_TIME               KIM_BUTTON_TIME_MS(40)          /* 40 ms */
-
-// CD time for button
-#define KIM_BUTTON_COOL_DOWN_TIME                   KIM_BUTTON_TIME_MS(0)           /* 0 ms */
-
-// The maximum holding time for normal long push. Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
-#define KIM_BUTTON_SAFE_PUSH_MAX_TIME               KIM_BUTTON_TIME_MS(60000)       /* 1 min */
-
-// The maximum holding time for [front(before)]-button of "combination button". Once exceeded, Wait_For_Interrupt will be restored or ERROR_HOOK(DEBUG mode) will be entered.
-#define KIM_BUTTON_SAFE_PUSH_CMB_MAX_TIME           KIM_BUTTON_TIME_MS(180000)      /* 3 min for Combination_WFE */
-
-```
-
-* **NVIC-Priority** <span id="NVIC_priority"> </span>
-  * Set the corresponding interrupt priority. If the KIM_BUTTON_STM32CUBEMX_GENERATE_* macro option is enabled, this parameter is invalid.
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b NVIC-PRIORITY */
-
-/***** NVIC Priority config *****/
-
-// SysTick preemption priority is consistent with the HAL library Settings by default, namely TICK_INT_PRIORITY
-#define KIM_BUTTON_NVIC_SYSTICK_PreemptionPriority  TICK_INT_PRIORITY
-
-// The SysTick sub-priority always remains at 0. This macro has been deprecated!
-#define KIM_BUTTON_NVIC_SYSTICK_SubPriority         0   /* this macro is not in use */
-
-// EXTI PreemptionPriority 
-#define KIM_BUTTON_NVIC_EXTI_PreemptionPriority     0
-
-// EXTI SubPriority
-#define KIM_BUTTON_NVIC_EXTI_SubPriority            0
-
-```
-
-* **Enable-Disable-Options** <span id="enable_disable_options"> </span>
-  * Setting the values (0/1) of the following macro definitions can enable or disable the corresponding function/mode.
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b ENABLE-DISABLE-OPTIONS */
-
-/* If this macro is 1, then the TIME above cannot be configured separately for each button */
-#define KIM_BUTTON_ONLY_USE_DEFAULT_TIME            0
-
-/***** If you use STM32CubeMX to generate code, define follow macro as @c 1 ,   *****
- ***** otherwise define follow macro as @c 0 .                                  *****/
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_SYSTICK     0//If CubeMX generates Systick code, change the macro to 1
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_EXTI        0//If CubeMX generates EXTI code, change the macro to 1
-#define KIM_BUTTON_STM32CUBEMX_GENERATE_NVIC        0//If CubeMX generates NVIC code, change the macro to 1
-
-/***** Macro for use debug mode *****/
-// Setting the value of the macro to 1 can start the debug mode
-#define KIM_BUTTON_USE_DEBUG_MODE                   0   /* 1 --> use debug mode */
-
-/***** Macro for noinline state machine(Kim_Button_PrivateUse_AsynchronousHandler) function *****/
-// When the macro is set to 1, the state machine function is not inlined, which can significantly reduce ROM usage, but it may slow down the function call speed
-#define KIM_BUTTON_NO_INLINE_STATE_MACHINE          0
-
-/***** Macro to enable different long push time *****/
-// When the macro is set to 1, the timer long-press function is enabled
-// The long press callback function passes a parameter of type uint32_t, which records the number of ticks of the long press
-#define KIM_BUTTON_ENABLE_DIFFERENT_TIME_LONG_PUSH  0
-
-/***** Macro to enable button combination *****/
-// When the macro is set to 1, the key combination function is enabled
-// You need to use "Kim_Button_name.public_comb_before_button = &(button-[before]);" Bind the button-[before]
-// and use "Kim_Button_name.public_comb_callback = callback_func;" binding the callback function
-#define KIM_BUTTON_ENABLE_BUTTON_COMBINATION        0
-
-/***** Macro to enable button repeat(2 ~ 7) *****/
-// When the macro is 1, enable the multi-click function
-// Supports up to 7 multi-hit detecations (the number of multi-hits will be passed as a parameter to the callback function). When it is 0, only double-clicking is supported, and the callback function has no parameters.
-#define KIM_BUTTON_ENABLE_BUTTON_MORE_REPEAT        0
-
-```
-
-* **Functions-Hooks** <span id="functions_hooks"> </span>
-  * Set up the following macro functions to customize the code behavior. For example, a custom DEBUG_ERROR_HOOK can be called when an exception occurs in debug mode.
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b FUNCTIONS-HOOKS */
-
-/***** Critical Zone *****/
-/* define follow macro when multi-thread */
-// Critical sections that need protection in a multi-threaded environment can be commented out in a single-threaded one
-#define KIM_BUTTON_CRITICAL_ZONE_BEGIN()            do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_CRITICAL_ZONE_END()              do { __enable_irq(); } while(0U)
-
-/* define follow macro any time */
-// Critical sections that must be protected in both single-threaded and multi-threaded environments are not recommended to be modified
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_BEGIN()     do { __disable_irq(); } while(0U)
-#define KIM_BUTTON_ALWAYS_CRITICAL_ZONE_END()       do { __enable_irq(); } while(0U)
-
-/***** Macro for debug hook *****/
-/* ... can be your function ... */
-// The functions that will be called when an exception occurs in DEBUG mode, which can be customized
-#define KIM_BUTTON_DEBUG_ERROR_HOOK()               do { while(1) {} } while(0U)
-
-/***** Macro for get tick *****/
-// For future expansion and use, no modifications are recommended
-#define KIM_BUTTON_GET_TICK()                       HAL_GetTick()
-
-/***** Macro for GPIO read pin *****/
-// For future expansion and use, no modifications are recommended
-#define KIM_BUTTON_READ_PIN(GPIOx_BASE, PIN)        HAL_GPIO_ReadPin((GPIO_TypeDef*)(GPIOx_BASE), PIN)
-
-/***** Macro to stat low power mode *****/
-// Macro functions for entering low-power mode, which can be customized
-#define KIM_BUTTON_START_LOW_POWER()                do { __WFI(); } while(0U)
-
-```
-
-* **Namespace-Nameprefix** <span id="namespace_nameprefix"> </span>
-  * Customize the naming prefix of the exposed (extern) content, including the button name prefix and the initialization function prefix.
-
-```c
-
-/** @p ------------------------------------------------------------- */
-/** @b NAMESPACE-NAME-PREFIX */
-
-/***** @namespace Name Prefix *****/
-/** If you change this macro, you need to use `new_prefix + Init_ + button_name()`      **
- ** to initialize the button, and use `new_prefix + button_name` struct to use method.  **
- **                                                                                     **
- ** @example                                                                            **
- **     #define KIM_BUTTON_NAME_PREFIX         KEY_                                     **
- **     KIM_BUTTON__REGISTER(..., ..., ..., THE_NAME)                                   **
- **                                                                                     **
- **     Then I need to use `KEY_Init_THE_NAME()` to initialize the button, and use      **
- **     `KEY_THE_NAME.method_asynchronous_handler(..., ..., ...)` and                   **
- **     `KEY_THE_NAME.method_interrupt_handler()`                                       **/
-#define KIM_BUTTON_NAME_PREFIX                      Kim_Button_
-
-```
-
-- [Top](#stm32-simplebutton)
-
-### START NOW 立刻开始
-
-```shell
-
-git clone https://github.com/Kim-J-Smith/STM32-SimpleButton.git
-
-```
+[Back to Contents](#contents)
