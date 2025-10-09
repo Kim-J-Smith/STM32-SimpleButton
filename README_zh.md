@@ -491,7 +491,7 @@ void EXTI0_IRQHandler(void) {
 
 stateDiagram-v2
 
-    classDef Begin_Point_State fill:#e0f2fe,stroke:#0369a1,stroke-width:2px,color:black
+    classDef Begin_Point_State fill: #8dbfe0ff,stroke:#0369a1,stroke-width:2px,color:black
     class Wait_For_Interrupt Begin_Point_State
     
     %% 核心状态转换流程
@@ -510,9 +510,6 @@ stateDiagram-v2
     %% 组合键状态转换（可选）
 
     Wait_For_End --> Combination_WaitForEnd: **后置按键**被按下
-
-    classDef processState fill:#1f2937,stroke:#9ca3af,stroke-width:2px,color:white
-    class Combination processState
 
     state Combination {
         Combination_WaitForEnd
