@@ -33,6 +33,8 @@
     - [可调时间](#可调时间)
     - [名称前缀/命名空间](#名称前缀命名空间)
 
+- [状态机图解](#状态机图解)
+
 - [低功耗设计](#低功耗设计)
 
 - [衍生项目](#衍生项目)
@@ -476,6 +478,74 @@ void EXTI0_IRQHandler(void) {
     // 使用 SB_myButton 而非 SimpleButton_myButton 调用中断处理函数
     SB_myButton.Methods.interruptHandler();
 }
+
+```
+
+[回到目录](#目录)
+
+---
+
+## 状态机图解
+
+```mermaid
+
+stateDiagram-v2
+
+    classDef Begin_Point_State fill:#e0f2fe,stroke:#0369a1,stroke-width:2px,color:black
+    class Wait_For_Interrupt Begin_Point_State
+    
+    %% 核心状态转换流程
+    Wait_For_Interrupt --> Push_Delay: 中断触发(引脚电平变化)
+    Push_Delay --> Wait_For_End: **确认按下**
+    Push_Delay --> Wait_For_Interrupt: **发现是误触发**
+    Wait_For_End --> Release_Delay: 引脚释放
+    Release_Delay --> Wait_For_End: **发现没有释放**
+    Release_Delay --> Wait_For_Repeat: **确认释放**
+    Wait_For_Repeat --> Repeat_Push: 内再次按下
+    Wait_For_Repeat --> Single_Push: 超过窗口时间
+    Repeat_Push --> Cool_Down: 执行 双击/计数多击 回调
+    Single_Push --> Cool_Down: 执行 短按、长按/计时长按 回调
+    Cool_Down --> Wait_For_Interrupt: 冷却时间结束
+    
+    %% 组合键状态转换（可选）
+
+    Wait_For_End --> Combination_WaitForEnd: **后置按键**被按下
+
+    classDef processState fill:#1f2937,stroke:#9ca3af,stroke-width:2px,color:white
+    class Combination processState
+
+    state Combination {
+        Combination_WaitForEnd
+        Combination_Release
+        Combination_Push
+    }
+
+    Combination_WaitForEnd --> Combination_Release: 释放
+    Combination_Release --> Combination_WaitForEnd: 二次确认释放失败
+    Combination_Release --> Cool_Down: 二次确认释放成功
+
+    Release_Delay --> Combination_Push: **后置按键**被按下
+    Combination_Push --> Cool_Down: 执行 组合键 回调
+    
+    state Hold {
+        Hold_Push
+        Hold_Release
+    }
+
+    Wait_For_End --> Hold_Push: 达到保持判定时间
+    Hold_Push --> Hold_Release: 释放按键
+    Hold_Release --> Hold_Push: 二次确认释放失败
+    Hold_Release --> Cool_Down: 二次确认释放成功
+
+    %% 错误处理/安全机制
+    Wait_For_End --> Wait_For_Interrupt: 超过安全时限
+    Combination_WaitForEnd --> Wait_For_Interrupt: 超过安全时限
+    
+    %% 状态说明
+    note left of Wait_For_Interrupt
+        初始/空闲状态
+        等待中断触发
+    end note
 
 ```
 

@@ -30,8 +30,10 @@
     - [Long Push Hold](#long-push-hold)
     - [Button Combination](#button-combinations)
     - [Low Power](#low-power)
-    - [Adjustable Time]()
-    - [Namespace]()
+    - [Adjustable Time](#adjustable-time)
+    - [Namespace](#name-prefixesnamespaces)
+
+- [State Machine Graph](#state-machine-graph)
 
 - [Low Power Design](#low-power-design)
 
@@ -476,6 +478,72 @@ void EXTI0_IRQHandler(void) {
     // Call the interrupt handler with SB_myButton instead of SimpleButton_myButton
     SB_myButton.Methods.interruptHandler();
 }
+
+```
+
+[Back to Contents](#contents)
+
+---
+
+## State Machine Graph
+
+```mermaid
+
+stateDiagram-v2
+
+    classDef Begin_Point_State fill:#e0f2fe,stroke:#0369a1,stroke-width:2px,color:black
+    class Wait_For_Interrupt Begin_Point_State
+    
+    %% Core States
+    Wait_For_Interrupt --> Push_Delay: EXTI trigger
+    Push_Delay --> Wait_For_End: Delay
+    Push_Delay --> Wait_For_Interrupt: **Found to be a false trigger**
+    Wait_For_End --> Release_Delay: Release button
+    Release_Delay --> Wait_For_End: **Found didn't release**
+    Release_Delay --> Wait_For_Repeat: **Confirm release**
+    Wait_For_Repeat --> Repeat_Push: Push again
+    Wait_For_Repeat --> Single_Push: repeat-push-window timeout
+    Repeat_Push --> Cool_Down: do repeat-callback
+    Single_Push --> Cool_Down: do single-callback
+    Cool_Down --> Wait_For_Interrupt: cool down over
+    
+    %% Comination Button 
+
+    Wait_For_End --> Combination_WaitForEnd: **next button** is pushed down
+
+    classDef processState fill:#1f2937,stroke:#9ca3af,stroke-width:2px,color:white
+    class Combination processState
+
+    state Combination {
+        Combination_WaitForEnd
+        Combination_Release
+        Combination_Push
+    }
+
+    Combination_WaitForEnd --> Combination_Release: release
+    Combination_Release --> Combination_WaitForEnd: Reconfirm release failed
+    Combination_Release --> Cool_Down: Reconfirm release success
+
+    Release_Delay --> Combination_Push: **next button** is pushed down
+    Combination_Push --> Cool_Down: do combination_callback
+    
+    state Hold {
+        Hold_Push
+        Hold_Release
+    }
+
+    Wait_For_End --> Hold_Push: time reached
+    Hold_Push --> Hold_Release: release button
+    Hold_Release --> Hold_Push: Reconfirm release failed
+    Hold_Release --> Cool_Down: Reconfirm release success
+
+    Wait_For_End --> Wait_For_Interrupt: safe-time timeout
+    Combination_WaitForEnd --> Wait_For_Interrupt: safe-time timeout
+    
+    note left of Wait_For_Interrupt
+        Wait for interrupt
+        Idle
+    end note
 
 ```
 
