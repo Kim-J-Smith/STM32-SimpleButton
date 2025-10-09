@@ -491,13 +491,7 @@ void EXTI0_IRQHandler(void) {
 
 ## Derivative Project
 
-### STM32
-
-- [HAL-Kim-J-Smith/STM32-SimpleButton]()(coming soon)
-
-### CH32
-
-- [StandardLib-Kim-J-Smith/CH32-SimpleButton]()(coming soon)
+- This project is a derivative project of [Simple-Button](https://github.com/Kim-J-Smith/Simple-Button).
 
 
 [Back to Contents](#contents)
