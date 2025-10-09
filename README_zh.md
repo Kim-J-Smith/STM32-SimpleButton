@@ -555,6 +555,45 @@ stateDiagram-v2
 
 ## 低功耗设计
 
+- 低功耗是本项目设计的主要目的：使用外部中断而非轮询带来了天然的中断支持。
+
+- 当所有按键都闲置时，可以使用类似`__WFI()`之类的函数让CPU的时钟停止，进入低功耗模式。当按键被按下，触发外部中断时，按键会被唤醒。
+
+- 本项目提供了`SIMPLEBTN__START_LOWPOWER(...)`一键进入低功耗接口，使用方法已在[低功耗](#低功耗)给出。
+
+- `__WFI()`固然是最简单的进入低功耗的函数，但这样做可能效果并不能完全达到预期，此处提供一些低功耗建议：
+
+    1. 在进入低功耗模式前，建议将所有 I/O 配置成为上拉/下拉输入或模拟输入，防止芯片 I/O 浮空产生漏电流。[1]
+
+    2. 对于芯片小封装型号，相较最大封装，未封装出的引脚，建议配置为上拉/下拉输入或模拟输入，否则可能影响电流指标。[1]
+
+    3. 释放SWD 调试接口作为GPIO功能,并配置为上拉/下拉输入或模拟输入(唤醒后恢复SWD功能)。[1]
+
+    4. 建议在进入低功耗模式前，彻底关闭不需要使用的外设。如果条件允许，关闭PLL切换低速时钟以节能。
+
+[1]: 参考 https://github.com/openwch/ch32_application_notes
+
+- 因此，您可能需要定制`SIMPLEBTN_FUNC_START_LOW_POWER()`这个宏接口，它会被`SIMPLEBTN__START_LOWPOWER(...)`调用。伪代码示例如下：
+```c
+// 在文件开头的 Other-Functions 处找到它
+#define SIMPLEBTN_FUNC_START_LOW_POWER()    simpleButton_start_low_power()
+
+static inline void simpleButton_start_low_power(void) {
+    config_GPIO_IPD_for_low_power();
+    Disable_SWD();
+    Disable_some_Periph();
+    Disable_PLL();
+
+    __WFI();
+
+    Enable_PLL();
+    Enable_some_Periph();
+    Enable_SWD();
+    config_GPIO_normal();
+}
+
+```
+
 [回到目录](#目录)
 
 ---

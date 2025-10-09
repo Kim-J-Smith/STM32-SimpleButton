@@ -553,6 +553,48 @@ stateDiagram-v2
 
 ## Low Power Design
 
+- Low power consumption is the main objective of this project design: Using external interrupts instead of polling provides natural interrupt support. 
+
+- When all the buttons are inactive, a function like `__WFI()` can be used to stop the CPU's clock and enter a low-power mode. When a button is pressed and an external interrupt is triggered, the button will be awakened. 
+
+- This project provides the `SIMPLEBTN__START_LOWPOWER(...)` function for directly accessing the low-power interface. The usage method has been described in the [Low Power] section (#low-power). 
+
+- `__WFI()` is undoubtedly the simplest function for entering low-power mode, but doing so may not yield the exact results one expects. Here are some suggestions for achieving low power consumption: 
+
+1. Before entering the low-power mode, it is recommended to configure all I/O as pull-up/pull-down inputs or analog inputs to prevent floating of the chip I/O and the generation of leakage current. [1]
+
+
+2. For the small package type of chips, compared to the largest package, the unconnected pins should be configured as pull-up/pull-down inputs or analog inputs; otherwise, it may affect the current indicators. [1]
+
+
+3. Release the SWD debugging interface and configure it as a GPIO function. It should be set as an input with pull-up/pull-down or as an analog input (the SWD function will be restored after wake-up). [1]
+
+
+4. It is recommended to completely turn off all unnecessary peripherals before entering the low-power mode. If conditions permit, disable the PLL switching to a lower-speed clock to save energy. 
+
+[1]: Refer to https://github.com/openwch/ch32_application_notes 
+
+5. Therefore, you may need to customize the `SIMPLEBTN_FUNC_START_LOW_POWER()` macro interface, which will be called by `SIMPLEBTN__START_LOWPOWER(...)`. The pseudo-code example is as follows:
+```c
+// Find this macro at Other-Functions at the beginning of file.
+#define SIMPLEBTN_FUNC_START_LOW_POWER()    simpleButton_start_low_power()
+
+static inline void simpleButton_start_low_power(void) {
+    config_GPIO_IPD_for_low_power();
+    Disable_SWD();
+    Disable_some_Periph();
+    Disable_PLL();
+
+    __WFI();
+
+    Enable_PLL();
+    Enable_some_Periph();
+    Enable_SWD();
+    config_GPIO_normal();
+}
+
+```
+
 [Back to Contents](#contents)
 
 ---
