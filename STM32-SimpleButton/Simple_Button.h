@@ -220,15 +220,16 @@ typedef struct simpleButton_Type_PublicBtnStatus_t {
 #endif /* SIMPLEBTN_MODE_ENABLE_COMBINATION != 0 */
 
 #if SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME == 0
-    uint16_t                        longPushMinTime;
-    uint16_t                        coolDownTime;
-    uint16_t                        repeatWindowTime;
 
  #if SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD != 0
 
-    uint16_t                        holdPushMinTime;
+    uint32_t                        holdPushMinTime;
 
  #endif /* SIMPLEBTN_MODE_ENABLE_LONGPUSH_HOLD != 0 */
+
+    uint16_t                        longPushMinTime;
+    uint16_t                        coolDownTime;
+    uint16_t                        repeatWindowTime;
 
 #endif /* SIMPLEBTN_MODE_ENABLE_ONLY_DEFAULT_TIME == 0 */
 } simpleButton_Type_PublicBtnStatus_t;
