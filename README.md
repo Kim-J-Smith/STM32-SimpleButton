@@ -124,7 +124,7 @@
 
 ```
 
-1. Use the **SIMPLEBTN__CREATE()** macro to create the required buttons. Create three buttons and connect them respectively to `GPIOA-Pin0`, `GPIOB-Pin0`, and `GPIOD-Pin14`, all triggered by the falling edge. Name them respectively as `SB1`, `SB2`, and `SB3`. The STM32-HAL example is as follows (the following code is located at `my_buttons.c`) :
+1. Use the **SIMPLEBTN__CREATE()** macro to create the required buttons. Create three buttons and connect them respectively to `GPIOA-Pin0`, `GPIOB-Pin1`, and `GPIOD-Pin14`, all triggered by the falling edge. Name them respectively as `SB1`, `SB2`, and `SB3`. The STM32-HAL example is as follows (the following code is located at `my_buttons.c`) :
 
 ```c
 #include "Simple_Button.h"
@@ -133,7 +133,7 @@
 
 SIMPLEBTN__CREATE(GPIOA_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB1)
 
-SIMPLEBTN__CREATE(GPIOB_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB2)
+SIMPLEBTN__CREATE(GPIOB_BASE, GPIO_PIN_1, EXTI_TRIGGER_FALLING, SB2)
 
 SIMPLEBTN__CREATE(GPIOD_BASE, GPIO_PIN_14, EXTI_TRIGGER_FALLING, SB3)
 
@@ -220,13 +220,21 @@ int main(void) {
     - **You need to implement the interrupt function yourself**. Most single-chip microcomputer bare-metal development requires this to be done. Go to the assembly startup file to find the `Interrupt Vector Table`, then locate the interrupt corresponding to the EXTI pin and implement the interrupt function. Continuing from the previous step, taking the STM32 standard library as an example:
 
     ```c
-        // SB1, SB2 ----- Pin0
+        // SB1 ----- Pin0
         void EXTI0_IRQHandler(void) {
             if (EXTI_GetITStatus(EXTI_Line0) == SET) {
                 SimpleButton_SB1.Methods.interruptHandler();
-                SimpleButton_SB2.Methods.interruptHandler();
 
                 EXTI_ClearITPendingBit(EXTI_Line0);
+            }
+        }
+
+        // SB2 ----- Pin1
+        void EXTI1_IRQHandler(void) {
+            if (EXTI_GetITStatus(EXTI_Line1) == SET) {
+                SimpleButton_SB2.Methods.interruptHandler();
+
+                EXTI_ClearITPendingBit(EXTI_Line1);
             }
         }
 

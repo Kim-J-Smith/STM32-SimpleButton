@@ -124,7 +124,7 @@
 
 ```
 
-1. 使用 **SIMPLEBTN__CREATE()** 宏 创建需要的按键。创建3个按键，分别连接`GPIOA-Pin0`, `GPIOB-Pin0`, `GPIOD-Pin14`，都是下降沿触发，分别起名为`SB1`, `SB2`, `SB3`，STM32-HAL示例如下（以下代码位于`my_buttons.c`）：
+1. 使用 **SIMPLEBTN__CREATE()** 宏 创建需要的按键。创建3个按键，分别连接`GPIOA-Pin0`, `GPIOB-Pin1`, `GPIOD-Pin14`，都是下降沿触发，分别起名为`SB1`, `SB2`, `SB3`，STM32-HAL示例如下（以下代码位于`my_buttons.c`）：
 
 ```c
 #include "Simple_Button.h"
@@ -133,7 +133,7 @@
 
 SIMPLEBTN__CREATE(GPIOA_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB1)
 
-SIMPLEBTN__CREATE(GPIOB_BASE, GPIO_PIN_0, EXTI_TRIGGER_FALLING, SB2)
+SIMPLEBTN__CREATE(GPIOB_BASE, GPIO_PIN_1, EXTI_TRIGGER_FALLING, SB2)
 
 SIMPLEBTN__CREATE(GPIOD_BASE, GPIO_PIN_14, EXTI_TRIGGER_FALLING, SB3)
 
@@ -220,13 +220,21 @@ int main(void) {
     - **需要自己去实现中断函数**。大多数单片机裸机开发都需要这样做。去汇编启动文件中找到`中断向量表`，然后找到EXTI对应引脚的中断，实现中断函数。依旧承接上一步，以 STM32 标准库为例：
 
     ```c
-        // SB1 与 SB2 都是Pin0
+        // SB1 是 Pin0
         void EXTI0_IRQHandler(void) {
             if (EXTI_GetITStatus(EXTI_Line0) == SET) {
                 SimpleButton_SB1.Methods.interruptHandler();
-                SimpleButton_SB2.Methods.interruptHandler();
 
                 EXTI_ClearITPendingBit(EXTI_Line0);
+            }
+        }
+
+        // SB2 是 Pin1
+        void EXTI1_IRQHandler(void) {
+            if (EXTI_GetITStatus(EXTI_Line1) == SET) {
+                SimpleButton_SB2.Methods.interruptHandler();
+
+                EXTI_ClearITPendingBit(EXTI_Line1);
             }
         }
 
@@ -262,6 +270,9 @@ int main(void) {
         switch (GPIO_Pin) {
         case GPIO_PIN_0: {
             SimpleButton_SB1.Methods.interruptHandler();
+            break;
+        }
+        case GPIO_PIN_1: {
             SimpleButton_SB2.Methods.interruptHandler();
             break;
         }
