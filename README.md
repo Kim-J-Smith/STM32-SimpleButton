@@ -72,7 +72,7 @@
 
 4. ✅ **Asynchronous Processing** : The callback function is processed asynchronously to reduce the interrupt dwell time.
 
-4. ✅ **Secondary Confirmation** : This project performs secondary confirmation on the pin trigger signal, thereby supporting pins who have the same number in GPIOX to be used as button pins simultaneously, eliminating concerns about external interrupt conflicts.
+4. ✅ **Secondary Confirmation** : This project performs secondary confirmation on the pin trigger signal, which can ensure stability even in scenarios with unstable power supply environments.
 
 5. ✅ **Adjustable Time** : This project supports setting the *minimum time for long press determination, multi-click window time, and cooldown time* for each button separately, making it convenient for button customization.
 
